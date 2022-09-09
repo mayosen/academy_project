@@ -74,6 +74,10 @@ public class ImportService {
                 } else if (current.getSize() != null) {
                     throw new ValidationException("Поле size должно быть пустым у папки");
                 }
+            } else if (current.getType() == SystemItemType.FILE) {
+                if (current.getSize() == null || !(current.getSize() > 0)) {
+                    throw new ValidationException("Поле size должно быть больше 0 у файла");
+                }
             }
 
             if (current.getParentId() != null) {
