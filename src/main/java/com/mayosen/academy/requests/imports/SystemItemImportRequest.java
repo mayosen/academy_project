@@ -16,10 +16,9 @@ import java.util.List;
 @NoArgsConstructor
 public class SystemItemImportRequest {
     @NotEmpty
-    @UniqueElements  // TODO: check
+    @UniqueElements
     @Valid
     private List<SystemItemImport> items;
-    // TODO: Проверить вложенную валидацию
 
     @NotNull
     private Instant updateDate;
