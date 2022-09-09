@@ -2,6 +2,8 @@ package com.mayosen.academy.services;
 
 import com.mayosen.academy.domain.SystemItem;
 import com.mayosen.academy.domain.SystemItemType;
+import com.mayosen.academy.exceptions.ItemNotFoundException;
+import com.mayosen.academy.exceptions.ParentItemNotFoundException;
 import com.mayosen.academy.repos.SystemItemRepo;
 import com.mayosen.academy.requests.imports.SystemItemImport;
 import com.mayosen.academy.requests.imports.SystemItemImportRequest;
@@ -19,11 +21,11 @@ import java.util.Map;
 
 @Log4j2
 @Service
-public class ImportService {
+public class ItemService {
     private final SystemItemRepo systemItemRepo;
 
     @Autowired
-    public ImportService(SystemItemRepo systemItemRepo) {
+    public ItemService(SystemItemRepo systemItemRepo) {
         this.systemItemRepo = systemItemRepo;
     }
 
@@ -85,7 +87,7 @@ public class ImportService {
 
                 if (parentImport == null) {
                     parentType = systemItemRepo.findById(current.getParentId())
-                            .orElseThrow(() -> new ValidationException("Родитель с таким id не существует"))
+                            .orElseThrow(ParentItemNotFoundException::new)
                             .getType();
                 } else {
                     parentType = parentImport.getType();
@@ -106,5 +108,10 @@ public class ImportService {
         }
 
         systemItemRepo.saveAll(toSave);
+    }
+
+    public void delete(String id) {
+        SystemItem item = systemItemRepo.findById(id).orElseThrow(ItemNotFoundException::new);
+        systemItemRepo.delete(item);
     }
 }
