@@ -52,7 +52,6 @@ public class ImportService {
                 rootFolders.size(), folders.size(), files.size())
         );
 
-
         saveAll(rootFolders, items, request.getUpdateDate());
         saveAll(folders, items, request.getUpdateDate());
         saveAll(files, items, request.getUpdateDate());
