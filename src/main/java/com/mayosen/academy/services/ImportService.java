@@ -46,8 +46,8 @@ public class ImportService {
         }
 
         log.debug(String.format(
-                "folders: %d, root folders: %d, files: %d",
-                folders.size(), rootFolders.size(), files.size())
+                "Separated request: root folders: %d, folders: %d, files: %d",
+                rootFolders.size(), folders.size(), files.size())
         );
 
         Map<String, SystemItem> items = new HashMap<>();
