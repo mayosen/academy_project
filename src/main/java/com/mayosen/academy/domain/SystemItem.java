@@ -5,16 +5,15 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "system_item")
 @Getter
 @Setter
 @NoArgsConstructor
-public class SystemItem {
+public class SystemItem implements Serializable {
     @Id
     @Column(name = "item_id")
     private String id;
@@ -34,8 +33,4 @@ public class SystemItem {
 
     @Column(name = "size")
     private Long size;
-
-    @OneToMany
-    @JoinColumn(name = "item_id", referencedColumnName = "parent_id")
-    private List<SystemItem> children = new ArrayList<>();
 }
