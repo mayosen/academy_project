@@ -32,6 +32,7 @@ public class ImportService {
         List<SystemItemImport> folders = new ArrayList<>();
         List<SystemItemImport> rootFolders = new ArrayList<>();
         List<SystemItemImport> files = new ArrayList<>();
+        Map<String, SystemItemImport> items = new HashMap<>();
 
         for (SystemItemImport current : request.getItems()) {
             if (current.getType() == SystemItemType.FOLDER) {
@@ -43,6 +44,7 @@ public class ImportService {
             } else {
                 files.add(current);
             }
+            items.put(current.getId(), current);
         }
 
         log.debug(String.format(
@@ -50,13 +52,13 @@ public class ImportService {
                 rootFolders.size(), folders.size(), files.size())
         );
 
-        Map<String, SystemItem> items = new HashMap<>();
+
         saveAll(rootFolders, items, request.getUpdateDate());
         saveAll(folders, items, request.getUpdateDate());
         saveAll(files, items, request.getUpdateDate());
     }
 
-    private void saveAll(List<SystemItemImport> imports, Map<String, SystemItem> items, Instant updateDate) {
+    private void saveAll(List<SystemItemImport> imports, Map<String, SystemItemImport> items, Instant updateDate) {
         List<SystemItem> toSave = new ArrayList<>();
 
         for (SystemItemImport current : imports) {
@@ -74,17 +76,19 @@ public class ImportService {
                 }
             }
 
-            SystemItem parent = null;
-
             if (current.getParentId() != null) {
-                parent = items.get(current.getParentId());
+                SystemItemType parentType;
+                SystemItemImport parentImport = items.get(current.getParentId());
 
-                if (parent == null) {
-                    parent = systemItemRepo.findById(current.getParentId())
-                            .orElseThrow(() -> new ValidationException("Родитель с таким id не существует"));
+                if (parentImport == null) {
+                    parentType = systemItemRepo.findById(current.getParentId())
+                            .orElseThrow(() -> new ValidationException("Родитель с таким id не существует"))
+                            .getType();
+                } else {
+                    parentType = parentImport.getType();
                 }
 
-                if (parent.getType() != SystemItemType.FOLDER) {
+                if (parentType != SystemItemType.FOLDER) {
                     throw new ValidationException("Родителем может быть только папка");
                 }
             }
@@ -95,7 +99,6 @@ public class ImportService {
             item.setParentId(current.getParentId());
             item.setType(current.getType());
             item.setSize(current.getSize());
-            items.put(item.getId(), item);
             toSave.add(item);
         }
 
