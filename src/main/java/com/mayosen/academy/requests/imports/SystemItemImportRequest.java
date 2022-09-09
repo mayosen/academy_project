@@ -3,6 +3,7 @@ package com.mayosen.academy.requests.imports;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.validator.constraints.UniqueElements;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
@@ -15,7 +16,10 @@ import java.util.List;
 @NoArgsConstructor
 public class SystemItemImportRequest {
     @NotEmpty
-    private List<@Valid SystemItemImport> items;
+    @UniqueElements  // TODO: check
+    @Valid
+    private List<SystemItemImport> items;
+    // TODO: Проверить вложенную валидацию
 
     @NotNull
     private Instant updateDate;
