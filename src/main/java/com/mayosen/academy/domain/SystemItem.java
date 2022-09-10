@@ -43,6 +43,7 @@ public class SystemItem implements Serializable {
     public String toString() {
         return "SystemItem{" +
                 "id='" + id + '\'' +
+                ", type=" + type +
                 '}';
     }
 }

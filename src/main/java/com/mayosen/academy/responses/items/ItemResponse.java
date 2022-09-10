@@ -1,5 +1,7 @@
 package com.mayosen.academy.responses.items;
 
+import com.fasterxml.jackson.annotation.*;
+import com.mayosen.academy.domain.SystemItem;
 import com.mayosen.academy.domain.SystemItemType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,6 +15,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonPropertyOrder({"id", "url", "type", "parentId", "date", "size", "children"})
 public class ItemResponse {
     private String id;
 
@@ -20,7 +23,8 @@ public class ItemResponse {
 
     private SystemItemType type;
 
-    private String parentId;
+    @JsonIgnore
+    private SystemItem parent;
 
     private Instant date;
 
@@ -28,10 +32,16 @@ public class ItemResponse {
 
     private List<ItemResponse> children;
 
+    @JsonProperty("parentId")
+    public String getParentId() {
+        return parent != null ? parent.getId() : null;
+    }
+
     @Override
     public String toString() {
         return "ItemResponse{" +
                 "id='" + id + '\'' +
+                ", type=" + type +
                 '}';
     }
 }

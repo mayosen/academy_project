@@ -7,10 +7,6 @@ import com.mayosen.academy.repos.SystemItemRepo;
 import com.mayosen.academy.requests.imports.SystemItemImport;
 import com.mayosen.academy.requests.imports.SystemItemImportRequest;
 import com.mayosen.academy.responses.items.ItemResponse;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -111,7 +107,7 @@ public class ItemService {
 
     @Transactional
     public void delete(String id, Instant updateDate) {
-        SystemItem item = systemItemRepo.findById(id).orElseThrow(ItemNotFoundException::new);
+        SystemItem item = findById(id);
         SystemItem current = item;
         List<SystemItem> parents = new ArrayList<>();
 
@@ -125,53 +121,36 @@ public class ItemService {
         systemItemRepo.saveAll(parents);
     }
 
-    public ItemResponse get(String id) {
+    public ItemResponse getNode(String id) {
         SystemItem rootItem = findById(id);
-        ItemResponse rootResponse = mapItemToItemResponse(rootItem);
-        Queue<Pair> childrenQueue = new LinkedList<>();
-        childrenQueue.add(new Pair(rootResponse, rootItem));
 
-        while (childrenQueue.peek() != null) {
-            Pair pair = childrenQueue.poll();
-            List<SystemItem> children = systemItemRepo.findChildrenByItemId(pair.getCurrent().getId());
-
-            for (SystemItem child : children) {
-                ItemResponse response = mapItemToItemResponse(child);
-                pair.getParent().getChildren().add(response);
-
-                if (response.getType() == SystemItemType.FOLDER) {
-                    childrenQueue.add(new Pair(response, child));
-                }
-            }
+        if (rootItem.getType() == SystemItemType.FILE) {
+            ItemResponse response = new ItemResponse();
+            response.setId(rootItem.getId());
+            response.setUrl(rootItem.getUrl());
+            response.setType(rootItem.getType());
+            response.setParent(rootItem.getParent());
+            response.setDate(rootItem.getDate());
+            response.setSize(rootItem.getSize());
+            response.setChildren(null);
+            return response;
         }
 
-        return rootResponse;
+        return null;
     }
 
-    private ItemResponse mapItemToItemResponse(SystemItem item) {
-        return new ItemResponse(
-                item.getId(),
-                item.getUrl(),
-                item.getType(),
-                item.getParentId(),
-                item.getDate(),
-                item.getSize(),
-                item.getType() == SystemItemType.FOLDER ? new ArrayList<>() : null
-        );
-    }
-
-    @Getter
-    @AllArgsConstructor
-    private class Pair {
-        private ItemResponse parent;
-        private SystemItem current;
-
-        @Override
-        public String toString() {
-            return "Pair{" +
-                    "parent=" + parent +
-                    ", current=" + current +
-                    '}';
+    private ItemResponse mapToItemResponse(SystemItem item) {
+        if (item.getParent() == null) {
+            return null;
         }
+
+        ItemResponse response = new ItemResponse();
+        response.setId(item.getId());
+        response.setUrl(item.getUrl());
+        response.setType(item.getType());
+        // response.setParent(mapToItemResponse(item.getParent()));
+        response.setDate(item.getDate());
+
+        return response;
     }
 }
