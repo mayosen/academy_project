@@ -33,4 +33,11 @@ public class SystemItem implements Serializable {
 
     @Column(name = "size")
     private Long size;
+
+    @Override
+    public String toString() {
+        return "SystemItem{" +
+                "id='" + id + '\'' +
+                '}';
+    }
 }

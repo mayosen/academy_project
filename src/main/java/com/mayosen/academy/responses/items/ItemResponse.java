@@ -27,4 +27,11 @@ public class ItemResponse {
     private Long size;
 
     private List<ItemResponse> children;
+
+    @Override
+    public String toString() {
+        return "ItemResponse{" +
+                "id='" + id + '\'' +
+                '}';
+    }
 }

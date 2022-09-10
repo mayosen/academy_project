@@ -123,7 +123,7 @@ public class ItemService {
         SystemItem rootItem = findById(id);
         ItemResponse rootResponse = mapItemToItemResponse(rootItem);
         Queue<Pair> childrenQueue = new LinkedList<>();
-        childrenQueue.add(new Pair(rootResponse.getChildren(), rootItem));
+        childrenQueue.add(new Pair(rootResponse, rootItem));
 
         while (childrenQueue.peek() != null) {
             Pair pair = childrenQueue.poll();
@@ -131,10 +131,10 @@ public class ItemService {
 
             for (SystemItem child : children) {
                 ItemResponse response = mapItemToItemResponse(child);
-                pair.getParentList().add(response);
+                pair.getParent().getChildren().add(response);
 
                 if (response.getType() == SystemItemType.FOLDER) {
-                    childrenQueue.add(new Pair(response.getChildren(), child));
+                    childrenQueue.add(new Pair(response, child));
                 }
             }
         }
@@ -157,7 +157,15 @@ public class ItemService {
     @Getter
     @AllArgsConstructor
     private class Pair {
-        private List<ItemResponse> parentList;
+        private ItemResponse parent;
         private SystemItem current;
+
+        @Override
+        public String toString() {
+            return "Pair{" +
+                    "parent=" + parent +
+                    ", current=" + current +
+                    '}';
+        }
     }
 }
