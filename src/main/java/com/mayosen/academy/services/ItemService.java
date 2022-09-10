@@ -123,34 +123,50 @@ public class ItemService {
 
     public ItemResponse getNode(String id) {
         SystemItem rootItem = findById(id);
-
-        if (rootItem.getType() == SystemItemType.FILE) {
-            ItemResponse response = new ItemResponse();
-            response.setId(rootItem.getId());
-            response.setUrl(rootItem.getUrl());
-            response.setType(rootItem.getType());
-            response.setParent(rootItem.getParent());
-            response.setDate(rootItem.getDate());
-            response.setSize(rootItem.getSize());
-            response.setChildren(null);
-            return response;
-        }
-
-        return null;
+        ItemResponse response = new ItemResponse();
+        response.setId(rootItem.getId());
+        response.setUrl(rootItem.getUrl());
+        response.setType(rootItem.getType());
+        response.setParent(rootItem.getParent());
+        response.setDate(rootItem.getDate());
+        setChildren(response, rootItem.getChildren());
+        return response;
     }
 
-    private ItemResponse mapToItemResponse(SystemItem item) {
-        if (item.getParent() == null) {
-            return null;
+    public Long setChildren(ItemResponse response, List<SystemItem> itemChildren) {
+        Long size = 0L;
+        List<ItemResponse> responseChildren = null;
+
+        if (response.getType() == SystemItemType.FOLDER) {
+            responseChildren = new ArrayList<>();
+            ItemResponse currentResponse;
+            Long currentSize;
+
+            if (itemChildren != null) {
+                for (SystemItem item : itemChildren) {
+                    currentResponse = new ItemResponse();
+                    currentResponse.setId(item.getId());
+                    currentResponse.setUrl(item.getUrl());
+                    currentResponse.setType(item.getType());
+                    currentResponse.setParent(item.getParent());
+                    currentResponse.setDate(item.getDate());
+
+                    if (item.getType() == SystemItemType.FILE) {
+                        currentSize = item.getSize();
+                        currentResponse.setChildren(null);
+                    } else {
+                        currentSize = setChildren(currentResponse, item.getChildren());
+                    }
+
+                    currentResponse.setSize(currentSize);
+                    responseChildren.add(currentResponse);
+                    size += currentSize;
+                }
+            }
         }
 
-        ItemResponse response = new ItemResponse();
-        response.setId(item.getId());
-        response.setUrl(item.getUrl());
-        response.setType(item.getType());
-        // response.setParent(mapToItemResponse(item.getParent()));
-        response.setDate(item.getDate());
-
-        return response;
+        response.setChildren(responseChildren);
+        response.setSize(size);
+        return size;
     }
 }

@@ -44,4 +44,6 @@ public class ItemResponse {
                 ", type=" + type +
                 '}';
     }
+
+    // TODO: Конструктор с логикой?
 }
