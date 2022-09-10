@@ -132,7 +132,10 @@ public class ItemService {
             for (SystemItem child : children) {
                 ItemResponse response = mapItemToItemResponse(child);
                 pair.getParentList().add(response);
-                childrenQueue.add(new Pair(response.getChildren(), child));
+
+                if (response.getType() == SystemItemType.FOLDER) {
+                    childrenQueue.add(new Pair(response.getChildren(), child));
+                }
             }
         }
 
@@ -147,7 +150,7 @@ public class ItemService {
                 item.getParentId(),
                 item.getDate(),
                 item.getSize(),
-                new ArrayList<>()
+                item.getType() == SystemItemType.FOLDER ? new ArrayList<>() : null
         );
     }
 
