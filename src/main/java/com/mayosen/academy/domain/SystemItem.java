@@ -3,6 +3,7 @@ package com.mayosen.academy.domain;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -14,6 +15,7 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
+@ToString(of = {"id", "type"})
 public class SystemItem implements Serializable {
     @Id
     @Column(name = "item_id")
@@ -38,12 +40,4 @@ public class SystemItem implements Serializable {
 
     @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
     private List<SystemItem> children;
-
-    @Override
-    public String toString() {
-        return "SystemItem{" +
-                "id='" + id + '\'' +
-                ", type=" + type +
-                '}';
-    }
 }

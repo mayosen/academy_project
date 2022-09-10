@@ -5,10 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.mayosen.academy.domain.SystemItem;
 import com.mayosen.academy.domain.SystemItemType;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.List;
@@ -17,6 +14,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(of = {"id", "type"})
 @JsonPropertyOrder({"id", "url", "type", "parentId", "date", "size", "children"})
 public class ItemResponse {
     private String id;
@@ -37,14 +35,6 @@ public class ItemResponse {
     @JsonProperty("parentId")
     public String getParentId() {
         return parent != null ? parent.getId() : null;
-    }
-
-    @Override
-    public String toString() {
-        return "ItemResponse{" +
-                "id='" + id + '\'' +
-                ", type=" + type +
-                '}';
     }
 
     public ItemResponse(SystemItem item) {
