@@ -32,35 +32,34 @@ public class ItemService {
 
     @Transactional
     public void insertOrUpdate(SystemItemImportRequest request) {
+        List<SystemItemImport> rootItems = new ArrayList<>();
         List<SystemItemImport> folders = new ArrayList<>();
-        List<SystemItemImport> rootFolders = new ArrayList<>();
         List<SystemItemImport> files = new ArrayList<>();
-        Map<String, SystemItemImport> items = new HashMap<>();
 
         for (SystemItemImport current : request.getItems()) {
             if (current.getType() == SystemItemType.FOLDER) {
                 if (current.getParentId() == null) {
-                    rootFolders.add(current);
+                    rootItems.add(current);
                 } else {
                     folders.add(current);
                 }
             } else {
                 files.add(current);
             }
-            items.put(current.getId(), current);
         }
 
         log.debug(String.format(
-                "Separated request: root folders: %d, folders: %d, files: %d",
-                rootFolders.size(), folders.size(), files.size())
+                "Separating request: root items: %d, folders: %d, files: %d",
+                rootItems.size(), folders.size(), files.size())
         );
 
-        saveAll(rootFolders, items, request.getUpdateDate());
-        saveAll(folders, items, request.getUpdateDate());
-        saveAll(files, items, request.getUpdateDate());
+        Instant updateDate = request.getUpdateDate();
+        saveAll(rootItems, updateDate);
+        saveAll(folders, updateDate);
+        saveAll(files, updateDate);
     }
 
-    private void saveAll(List<SystemItemImport> imports, Map<String, SystemItemImport> items, Instant updateDate) {
+    private void saveAll(List<SystemItemImport> imports, Instant updateDate) {
         List<SystemItem> toSave = new ArrayList<>();
 
         for (SystemItemImport current : imports) {
@@ -82,17 +81,14 @@ public class ItemService {
                 }
             }
 
+            SystemItem parent = null;
+
             if (current.getParentId() != null) {
-                SystemItemType parentType;
-                SystemItemImport parentImport = items.get(current.getParentId());
+                // Поскольку папки сохраняются первее файлов, родитель уже существует в базе
+                parent = systemItemRepo.findById(current.getParentId())
+                        .orElseThrow(() -> new ValidationException("Родитель не найден"));
 
-                if (parentImport == null) {
-                    parentType = findById(current.getParentId()).getType();
-                } else {
-                    parentType = parentImport.getType();
-                }
-
-                if (parentType != SystemItemType.FOLDER) {
+                if (parent.getType() != SystemItemType.FOLDER) {
                     throw new ValidationException("Родителем может быть только папка");
                 }
             }
@@ -100,7 +96,7 @@ public class ItemService {
             item.setId(current.getId());
             item.setUrl(current.getUrl());
             item.setDate(updateDate);
-            item.setParentId(current.getParentId());
+            item.setParent(parent);
             item.setType(current.getType());
             item.setSize(current.getSize());
             toSave.add(item);
@@ -114,9 +110,19 @@ public class ItemService {
     }
 
     @Transactional
-    public void delete(String id) {
-        SystemItem item = findById(id);
+    public void delete(String id, Instant updateDate) {
+        SystemItem item = systemItemRepo.findById(id).orElseThrow(ItemNotFoundException::new);
+        SystemItem current = item;
+        List<SystemItem> parents = new ArrayList<>();
+
+        while (current.getParent() != null) {
+            current = current.getParent();
+            current.setDate(updateDate);
+            parents.add(current);
+        }
+
         systemItemRepo.delete(item);
+        systemItemRepo.saveAll(parents);
     }
 
     public ItemResponse get(String id) {
