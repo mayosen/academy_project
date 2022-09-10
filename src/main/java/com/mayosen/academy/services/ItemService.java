@@ -156,10 +156,11 @@ public class ItemService {
                     size += currentSize;
                 }
             }
+
+            response.setSize(size);
         }
 
         response.setChildren(responseChildren);
-        response.setSize(size);
         return size;
     }
 }

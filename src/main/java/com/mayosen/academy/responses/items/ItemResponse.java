@@ -53,5 +53,6 @@ public class ItemResponse {
         this.type = item.getType();
         this.parent = item.getParent();
         this.date = item.getDate();
+        this.size = item.getSize();
     }
 }
