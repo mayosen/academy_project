@@ -73,7 +73,9 @@ public class ItemService {
                     throw new ValidationException("Поле size должно быть пустым у папки");
                 }
             } else if (current.getType() == SystemItemType.FILE) {
-                if (current.getSize() == null || !(current.getSize() > 0)) {
+                if (current.getUrl() == null) {
+                    throw new ValidationException("Поле url не должно быть пустым у файла");
+                } else if (current.getSize() == null || !(current.getSize() > 0)) {
                     throw new ValidationException("Поле size должно быть больше 0 у файла");
                 }
             }
