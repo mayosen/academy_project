@@ -3,7 +3,6 @@ package com.mayosen.academy.services;
 import com.mayosen.academy.domain.SystemItem;
 import com.mayosen.academy.domain.SystemItemType;
 import com.mayosen.academy.exceptions.ItemNotFoundException;
-import com.mayosen.academy.exceptions.ParentItemNotFoundException;
 import com.mayosen.academy.repos.SystemItemRepo;
 import com.mayosen.academy.requests.imports.SystemItemImport;
 import com.mayosen.academy.requests.imports.SystemItemImportRequest;
@@ -31,35 +30,34 @@ public class ItemService {
 
     @Transactional
     public void insertOrUpdate(SystemItemImportRequest request) {
+        List<SystemItemImport> rootItems = new ArrayList<>();
         List<SystemItemImport> folders = new ArrayList<>();
-        List<SystemItemImport> rootFolders = new ArrayList<>();
         List<SystemItemImport> files = new ArrayList<>();
-        Map<String, SystemItemImport> items = new HashMap<>();
 
         for (SystemItemImport current : request.getItems()) {
             if (current.getType() == SystemItemType.FOLDER) {
                 if (current.getParentId() == null) {
-                    rootFolders.add(current);
+                    rootItems.add(current);
                 } else {
                     folders.add(current);
                 }
             } else {
                 files.add(current);
             }
-            items.put(current.getId(), current);
         }
 
         log.debug(String.format(
-                "Separated request: root folders: %d, folders: %d, files: %d",
-                rootFolders.size(), folders.size(), files.size())
+                "Separated request: root items: %d, folders: %d, files: %d",
+                rootItems.size(), folders.size(), files.size())
         );
 
-        saveAll(rootFolders, items, request.getUpdateDate());
-        saveAll(folders, items, request.getUpdateDate());
-        saveAll(files, items, request.getUpdateDate());
+        Instant updateDate = request.getUpdateDate();
+        saveAll(rootItems, updateDate);
+        saveAll(folders, updateDate);
+        saveAll(files, updateDate);
     }
 
-    private void saveAll(List<SystemItemImport> imports, Map<String, SystemItemImport> items, Instant updateDate) {
+    private void saveAll(List<SystemItemImport> imports, Instant updateDate) {
         List<SystemItem> toSave = new ArrayList<>();
 
         for (SystemItemImport current : imports) {
@@ -81,19 +79,14 @@ public class ItemService {
                 }
             }
 
+            SystemItem parent = null;
+
             if (current.getParentId() != null) {
-                SystemItemType parentType;
-                SystemItemImport parentImport = items.get(current.getParentId());
+                // Поскольку папки сохраняются первее файлов, родитель уже существует в базе
+                parent = systemItemRepo.findById(current.getParentId())
+                        .orElseThrow(() -> new ValidationException("Родитель не найден"));
 
-                if (parentImport == null) {
-                    parentType = systemItemRepo.findById(current.getParentId())
-                            .orElseThrow(ParentItemNotFoundException::new)
-                            .getType();
-                } else {
-                    parentType = parentImport.getType();
-                }
-
-                if (parentType != SystemItemType.FOLDER) {
+                if (parent.getType() != SystemItemType.FOLDER) {
                     throw new ValidationException("Родителем может быть только папка");
                 }
             }
@@ -101,7 +94,7 @@ public class ItemService {
             item.setId(current.getId());
             item.setUrl(current.getUrl());
             item.setDate(updateDate);
-            item.setParentId(current.getParentId());
+            item.setParent(parent);
             item.setType(current.getType());
             item.setSize(current.getSize());
             toSave.add(item);

@@ -7,6 +7,7 @@ import lombok.Setter;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.List;
 
 @Entity
 @Table(name = "system_item")
@@ -21,16 +22,20 @@ public class SystemItem implements Serializable {
     @Column(name = "url")
     private String url;
 
-    @Column(name = "date", nullable = false)
+    @Column(name = "date")
     private Instant date;
 
-    @Column(name = "parent_id")
-    private String parentId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    private SystemItem parent;
 
-    @Column(name = "type", nullable = false)
+    @Column(name = "type")
     @Enumerated(EnumType.STRING)
     private SystemItemType type;
 
     @Column(name = "size")
     private Long size;
+
+    @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
+    private List<SystemItem> children;
 }
