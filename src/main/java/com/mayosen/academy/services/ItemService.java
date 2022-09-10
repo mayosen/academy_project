@@ -123,12 +123,7 @@ public class ItemService {
 
     public ItemResponse getNode(String id) {
         SystemItem rootItem = findById(id);
-        ItemResponse response = new ItemResponse();
-        response.setId(rootItem.getId());
-        response.setUrl(rootItem.getUrl());
-        response.setType(rootItem.getType());
-        response.setParent(rootItem.getParent());
-        response.setDate(rootItem.getDate());
+        ItemResponse response = new ItemResponse(rootItem);
         setChildren(response, rootItem.getChildren());
         return response;
     }
@@ -144,12 +139,7 @@ public class ItemService {
 
             if (itemChildren != null) {
                 for (SystemItem item : itemChildren) {
-                    currentResponse = new ItemResponse();
-                    currentResponse.setId(item.getId());
-                    currentResponse.setUrl(item.getUrl());
-                    currentResponse.setType(item.getType());
-                    currentResponse.setParent(item.getParent());
-                    currentResponse.setDate(item.getDate());
+                    currentResponse = new ItemResponse(item);
 
                     if (item.getType() == SystemItemType.FILE) {
                         currentSize = item.getSize();
