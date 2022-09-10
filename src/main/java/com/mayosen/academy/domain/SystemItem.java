@@ -1,6 +1,5 @@
 package com.mayosen.academy.domain;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -15,7 +14,6 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-@EqualsAndHashCode(of = "id")
 public class SystemItem implements Serializable {
     @Id
     @Column(name = "item_id")
