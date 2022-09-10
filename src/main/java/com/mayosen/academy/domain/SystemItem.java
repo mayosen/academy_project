@@ -38,4 +38,12 @@ public class SystemItem implements Serializable {
 
     @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
     private List<SystemItem> children;
+
+    @Override
+    public String toString() {
+        return "SystemItem{" +
+                "id='" + id + '\'' +
+                ", type=" + type +
+                '}';
+    }
 }

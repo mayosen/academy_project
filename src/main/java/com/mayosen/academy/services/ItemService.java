@@ -6,6 +6,7 @@ import com.mayosen.academy.exceptions.ItemNotFoundException;
 import com.mayosen.academy.repos.SystemItemRepo;
 import com.mayosen.academy.requests.imports.SystemItemImport;
 import com.mayosen.academy.requests.imports.SystemItemImportRequest;
+import com.mayosen.academy.responses.items.ItemResponse;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,9 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.validation.ValidationException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Log4j2
 @Service
@@ -74,7 +73,9 @@ public class ItemService {
                     throw new ValidationException("Поле size должно быть пустым у папки");
                 }
             } else if (current.getType() == SystemItemType.FILE) {
-                if (current.getSize() == null || !(current.getSize() > 0)) {
+                if (current.getUrl() == null) {
+                    throw new ValidationException("Поле url не должно быть пустым у файла");
+                } else if (current.getSize() == null || !(current.getSize() > 0)) {
                     throw new ValidationException("Поле size должно быть больше 0 у файла");
                 }
             }
@@ -103,9 +104,13 @@ public class ItemService {
         systemItemRepo.saveAll(toSave);
     }
 
+    private SystemItem findById(String id) {
+        return systemItemRepo.findById(id).orElseThrow(ItemNotFoundException::new);
+    }
+
     @Transactional
     public void delete(String id, Instant updateDate) {
-        SystemItem item = systemItemRepo.findById(id).orElseThrow(ItemNotFoundException::new);
+        SystemItem item = findById(id);
         SystemItem current = item;
         List<SystemItem> parents = new ArrayList<>();
 
@@ -117,5 +122,45 @@ public class ItemService {
 
         systemItemRepo.delete(item);
         systemItemRepo.saveAll(parents);
+    }
+
+    public ItemResponse getNode(String id) {
+        SystemItem rootItem = findById(id);
+        ItemResponse response = new ItemResponse(rootItem);
+        setChildren(response, rootItem.getChildren());
+        return response;
+    }
+
+    public Long setChildren(ItemResponse response, List<SystemItem> itemChildren) {
+        Long size = 0L;
+        List<ItemResponse> responseChildren = null;
+
+        if (response.getType() == SystemItemType.FOLDER) {
+            responseChildren = new ArrayList<>();
+            ItemResponse currentResponse;
+            Long currentSize;
+
+            if (itemChildren != null) {
+                for (SystemItem item : itemChildren) {
+                    currentResponse = new ItemResponse(item);
+
+                    if (item.getType() == SystemItemType.FILE) {
+                        currentSize = item.getSize();
+                        currentResponse.setChildren(null);
+                    } else {
+                        currentSize = setChildren(currentResponse, item.getChildren());
+                    }
+
+                    currentResponse.setSize(currentSize);
+                    responseChildren.add(currentResponse);
+                    size += currentSize;
+                }
+            }
+
+            response.setSize(size);
+        }
+
+        response.setChildren(responseChildren);
+        return size;
     }
 }

@@ -1,7 +1,6 @@
 package com.mayosen.academy.controllers;
 
 import com.mayosen.academy.exceptions.ItemNotFoundException;
-import com.mayosen.academy.exceptions.ParentItemNotFoundException;
 import com.mayosen.academy.responses.ErrorResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -14,8 +13,6 @@ import javax.validation.ValidationException;
 
 @ControllerAdvice
 public class ExceptionAdvice {
-    // TODO: Сделать сообщения стандартными
-
     @ExceptionHandler({
             MethodArgumentNotValidException.class,
             HttpMessageNotReadableException.class,
@@ -27,17 +24,11 @@ public class ExceptionAdvice {
 
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<ErrorResponse> handleServiceValidationException(ValidationException e) {
-        return ResponseEntity.badRequest().body(new ErrorResponse(
-                400, String.format("Validation failed. %s", e.getMessage())
-        ));
+        return ResponseEntity.badRequest().body(new ErrorResponse(400, "Validation failed"));
     }
 
-    @ExceptionHandler({
-            ItemNotFoundException.class,
-            ParentItemNotFoundException.class
-    })
+    @ExceptionHandler(ItemNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFoundException(Exception e) {
-        return ResponseEntity.badRequest().body(new ErrorResponse(
-                404, String.format("Item not found. %s", e.getMessage())));
+        return ResponseEntity.badRequest().body(new ErrorResponse(404, "Item not found"));
     }
 }
