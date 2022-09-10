@@ -131,7 +131,7 @@ public class ItemService {
         return response;
     }
 
-    public Long setChildren(ItemResponse response, List<SystemItem> itemChildren) {
+    private Long setChildren(ItemResponse response, List<SystemItem> itemChildren) {
         Long size = 0L;
         List<ItemResponse> responseChildren = null;
 
