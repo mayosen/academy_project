@@ -24,6 +24,6 @@ public class BaseController {
 
     @DeleteMapping("/delete/{id}")
     public void deleteItem(@PathVariable String id, @RequestParam Instant date) {
-        importService.delete(id);
+        importService.delete(id, date);
     }
 }

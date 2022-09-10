@@ -47,7 +47,7 @@ public class ItemService {
         }
 
         log.debug(String.format(
-                "Separated request: root items: %d, folders: %d, files: %d",
+                "Separating request: root items: %d, folders: %d, files: %d",
                 rootItems.size(), folders.size(), files.size())
         );
 
@@ -103,8 +103,19 @@ public class ItemService {
         systemItemRepo.saveAll(toSave);
     }
 
-    public void delete(String id) {
+    @Transactional
+    public void delete(String id, Instant updateDate) {
         SystemItem item = systemItemRepo.findById(id).orElseThrow(ItemNotFoundException::new);
+        SystemItem current = item;
+        List<SystemItem> parents = new ArrayList<>();
+
+        while (current.getParent() != null) {
+            current = current.getParent();
+            current.setDate(updateDate);
+            parents.add(current);
+        }
+
         systemItemRepo.delete(item);
+        systemItemRepo.saveAll(parents);
     }
 }
