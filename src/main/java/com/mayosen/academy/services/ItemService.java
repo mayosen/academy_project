@@ -3,10 +3,14 @@ package com.mayosen.academy.services;
 import com.mayosen.academy.domain.SystemItem;
 import com.mayosen.academy.domain.SystemItemType;
 import com.mayosen.academy.exceptions.ItemNotFoundException;
-import com.mayosen.academy.exceptions.ParentItemNotFoundException;
 import com.mayosen.academy.repos.SystemItemRepo;
 import com.mayosen.academy.requests.imports.SystemItemImport;
 import com.mayosen.academy.requests.imports.SystemItemImportRequest;
+import com.mayosen.academy.responses.items.ItemResponse;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,10 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.validation.ValidationException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Log4j2
 @Service
@@ -86,9 +87,7 @@ public class ItemService {
                 SystemItemImport parentImport = items.get(current.getParentId());
 
                 if (parentImport == null) {
-                    parentType = systemItemRepo.findById(current.getParentId())
-                            .orElseThrow(ParentItemNotFoundException::new)
-                            .getType();
+                    parentType = findById(current.getParentId()).getType();
                 } else {
                     parentType = parentImport.getType();
                 }
@@ -110,8 +109,52 @@ public class ItemService {
         systemItemRepo.saveAll(toSave);
     }
 
+    private SystemItem findById(String id) {
+        return systemItemRepo.findById(id).orElseThrow(ItemNotFoundException::new);
+    }
+
+    @Transactional
     public void delete(String id) {
-        SystemItem item = systemItemRepo.findById(id).orElseThrow(ItemNotFoundException::new);
+        SystemItem item = findById(id);
         systemItemRepo.delete(item);
+    }
+
+    public ItemResponse get(String id) {
+        SystemItem rootItem = findById(id);
+        ItemResponse rootResponse = mapItemToItemResponse(rootItem);
+        Queue<Pair> childrenQueue = new LinkedList<>();
+        childrenQueue.add(new Pair(rootResponse.getChildren(), rootItem));
+
+        while (childrenQueue.peek() != null) {
+            Pair pair = childrenQueue.poll();
+            List<SystemItem> children = systemItemRepo.findChildrenByItemId(pair.getCurrent().getId());
+
+            for (SystemItem child : children) {
+                ItemResponse response = mapItemToItemResponse(child);
+                pair.getParentList().add(response);
+                childrenQueue.add(new Pair(response.getChildren(), child));
+            }
+        }
+
+        return rootResponse;
+    }
+
+    private ItemResponse mapItemToItemResponse(SystemItem item) {
+        return new ItemResponse(
+                item.getId(),
+                item.getUrl(),
+                item.getType(),
+                item.getParentId(),
+                item.getDate(),
+                item.getSize(),
+                new ArrayList<>()
+        );
+    }
+
+    @Getter
+    @AllArgsConstructor
+    private class Pair {
+        private List<ItemResponse> parentList;
+        private SystemItem current;
     }
 }
