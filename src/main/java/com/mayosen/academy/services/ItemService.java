@@ -91,10 +91,11 @@ public class ItemService {
             }
 
             SystemItem parent = null;
+            Map<String, Long> knownParentSizes = new HashMap<>();
 
-            // Обновляем старых родителей
+            // Обновляем старого родителя
             if (item.getParent() != null) {
-                updateParents(item, updateDate);
+                updateParents(item, updateDate, knownParentSizes);
             }
 
             if (current.getParentId() != null) {
@@ -106,10 +107,10 @@ public class ItemService {
                     throw new ValidationException("Родителем может быть только папка");
                 }
 
-                // Обновляем новых родителей
+                // Обновляем нового родителя
                 parent.setDate(updateDate);
                 items.add(parent);
-                updateParents(parent, updateDate);
+                updateParents(parent, updateDate, knownParentSizes);
             }
 
             item.setId(current.getId());
@@ -126,10 +127,9 @@ public class ItemService {
         itemUpdateRepo.saveAll(updates);
     }
 
-    private void updateParents(SystemItem item, Instant updateDate) {
+    private void updateParents(SystemItem item, Instant updateDate, Map<String, Long> knownSizes) {
         SystemItem current = item;
         ItemUpdate update;
-        Map<String, Long> knownSizes = new HashMap<>();
 
         while (current.getParent() != null) {
             current = current.getParent();
@@ -149,7 +149,7 @@ public class ItemService {
     public void delete(String id, Instant updateDate) {
         SystemItem item = findById(id);
         systemItemRepo.delete(item);
-        updateParents(item, updateDate);
+        updateParents(item, updateDate, new HashMap<>());
     }
 
     @Transactional

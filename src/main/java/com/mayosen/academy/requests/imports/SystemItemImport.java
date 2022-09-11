@@ -1,10 +1,7 @@
 package com.mayosen.academy.requests.imports;
 
 import com.mayosen.academy.domain.SystemItemType;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotNull;
@@ -13,6 +10,7 @@ import javax.validation.constraints.NotNull;
 @Setter
 @NoArgsConstructor
 @EqualsAndHashCode(of = "id")
+@ToString(of = {"id", "type"})
 public class SystemItemImport {
     @NotNull
     @Length(max = 255)

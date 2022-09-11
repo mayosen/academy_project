@@ -2,6 +2,7 @@ package com.mayosen.academy.responses.items;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.mayosen.academy.domain.SystemItem;
 import com.mayosen.academy.domain.SystemItemType;
 import lombok.*;
@@ -14,6 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(of = {"id", "type"})
+@JsonPropertyOrder({"id", "url", "type", "parentId", "date", "size", "children"})
 public class ItemResponse {
     private String id;
 
