@@ -28,18 +28,28 @@ public class MainController {
 
     @DeleteMapping({"/delete/{id}", "/delete"})
     public void deleteItem(@PathVariable(required = false) String id, @RequestParam Instant date) {
-        id = PathUtil.processEmptyId(id);
+        id = PathUtil.processNullId(id);
         itemService.delete(id, date);
     }
 
     @GetMapping({"/nodes/{id}", "/nodes"})
     public ResponseEntity<ItemResponse> getItem(@PathVariable(required = false) String id) {
-        id = PathUtil.processEmptyId(id);
+        id = PathUtil.processNullId(id);
         return ResponseEntity.ok(itemService.getNode(id));
     }
 
     @GetMapping("/updates")
-    public ResponseEntity<SystemItemHistoryResponse> getUpdates(@RequestParam Instant date) {
-        return ResponseEntity.ok(itemService.getUpdates(date));
+    public ResponseEntity<SystemItemHistoryResponse> getLastUpdates(@RequestParam Instant date) {
+        return ResponseEntity.ok(itemService.getLastUpdates(date));
+    }
+
+    @GetMapping({"/node/{id}/history", "/node//history"})
+    public ResponseEntity<SystemItemHistoryResponse> getNodeHistory(
+            @PathVariable(required = false) String id,
+            @RequestParam(required = false) Instant dateStart,
+            @RequestParam(required = false) Instant dateEnd
+    ) {
+        id = PathUtil.processNullId(id);
+        return ResponseEntity.ok(itemService.getNodeHistory(id, dateStart, dateEnd));
     }
 }

@@ -1,8 +1,10 @@
 package com.mayosen.academy.services;
 
+import com.mayosen.academy.domain.ItemUpdate;
 import com.mayosen.academy.domain.SystemItem;
 import com.mayosen.academy.domain.SystemItemType;
 import com.mayosen.academy.exceptions.ItemNotFoundException;
+import com.mayosen.academy.repos.ItemUpdateRepo;
 import com.mayosen.academy.repos.SystemItemRepo;
 import com.mayosen.academy.requests.imports.SystemItemImport;
 import com.mayosen.academy.requests.imports.SystemItemImportRequest;
@@ -26,10 +28,12 @@ import java.util.Map;
 @Service
 public class ItemService {
     private final SystemItemRepo systemItemRepo;
+    private final ItemUpdateRepo itemUpdateRepo;
 
     @Autowired
-    public ItemService(SystemItemRepo systemItemRepo) {
+    public ItemService(SystemItemRepo systemItemRepo, ItemUpdateRepo itemUpdateRepo) {
         this.systemItemRepo = systemItemRepo;
+        this.itemUpdateRepo = itemUpdateRepo;
     }
 
     @Transactional
@@ -171,7 +175,7 @@ public class ItemService {
     }
 
     @Transactional
-    public SystemItemHistoryResponse getUpdates(Instant dateTo) {
+    public SystemItemHistoryResponse getLastUpdates(Instant dateTo) {
         Instant dateFrom = dateTo.minus(24, ChronoUnit.HOURS);
         List<SystemItem> items = systemItemRepo.findAllByDateBetween(dateFrom, dateTo);
 
@@ -221,5 +225,26 @@ public class ItemService {
         }
 
         return size;
+    }
+
+    @Transactional
+    public SystemItemHistoryResponse getNodeHistory(String id, Instant dateStart, Instant dateEnd) {
+        SystemItem item = findById(id);
+        List<ItemUpdate> updates;
+
+        if (dateStart == null && dateEnd == null) {
+            updates = itemUpdateRepo.findAllByItem(item);
+        } else if (dateStart != null && dateEnd != null) {
+            updates = itemUpdateRepo.findAllByItemAndDateInterval(item, dateStart, dateEnd);
+        } else if (dateStart != null) {
+            updates = itemUpdateRepo.findAllByItemAndDateFrom(item, dateStart);
+        } else {
+            updates = itemUpdateRepo.findAllByItemAndDateTo(item, dateEnd);
+        }
+
+        List<SystemItemHistoryUnit> units = updates.stream().map(SystemItemHistoryUnit::new).toList();
+
+        return new SystemItemHistoryResponse(units);
+
     }
 }

@@ -1,7 +1,7 @@
 package com.mayosen.academy.utils;
 
 public class PathUtil {
-    public static String processEmptyId(String id) {
+    public static String processNullId(String id) {
         return id == null ? "" : id;
     }
 }
