@@ -6,7 +6,6 @@ import lombok.Setter;
 import org.hibernate.validator.constraints.UniqueElements;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.List;
@@ -15,7 +14,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 public class SystemItemImportRequest {
-    @NotEmpty
+    @NotNull
     @UniqueElements
     @Valid
     private List<SystemItemImport> items;

@@ -25,13 +25,13 @@ public class BaseController {
         itemService.insertOrUpdate(request);
     }
 
-    @DeleteMapping("/delete/{id}")
-    public void deleteItem(@PathVariable String id, @RequestParam Instant date) {
+    @DeleteMapping({"/delete/{id}", "/delete"})
+    public void deleteItem(@PathVariable(required = false) String id, @RequestParam Instant date) {
         itemService.delete(id, date);
     }
 
-    @GetMapping("/nodes/{id}")
-    public ResponseEntity<ItemResponse> getItem(@PathVariable String id) {
+    @GetMapping({"/nodes/{id}", "/nodes"})
+    public ResponseEntity<ItemResponse> getItem(@PathVariable(required = false) String id) {
         return ResponseEntity.ok(itemService.getNode(id));
     }
 
