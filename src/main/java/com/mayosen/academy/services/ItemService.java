@@ -115,8 +115,6 @@ public class ItemService {
 
     @Transactional
     public void delete(String id, Instant updateDate) {
-        id = processEmptyId(id);
-
         SystemItem item = findById(id);
         SystemItem current = item;
         List<SystemItem> parents = new ArrayList<>();
@@ -133,16 +131,10 @@ public class ItemService {
 
     @Transactional
     public ItemResponse getNode(String id) {
-        id = processEmptyId(id);
-
         SystemItem rootItem = findById(id);
         ItemResponse response = new ItemResponse(rootItem);
         setChildren(response, rootItem.getChildren());
         return response;
-    }
-
-    private String processEmptyId(String id) {
-        return id == null ? "" : id;
     }
 
     private Long setChildren(ItemResponse response, List<SystemItem> itemChildren) {

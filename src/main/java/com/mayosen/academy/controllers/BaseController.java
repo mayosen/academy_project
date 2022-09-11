@@ -4,6 +4,7 @@ import com.mayosen.academy.requests.imports.SystemItemImportRequest;
 import com.mayosen.academy.responses.items.ItemResponse;
 import com.mayosen.academy.responses.updates.SystemItemHistoryResponse;
 import com.mayosen.academy.services.ItemService;
+import com.mayosen.academy.utils.PathUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,11 +28,13 @@ public class BaseController {
 
     @DeleteMapping({"/delete/{id}", "/delete"})
     public void deleteItem(@PathVariable(required = false) String id, @RequestParam Instant date) {
+        id = PathUtil.processEmptyId(id);
         itemService.delete(id, date);
     }
 
     @GetMapping({"/nodes/{id}", "/nodes"})
     public ResponseEntity<ItemResponse> getItem(@PathVariable(required = false) String id) {
+        id = PathUtil.processEmptyId(id);
         return ResponseEntity.ok(itemService.getNode(id));
     }
 
