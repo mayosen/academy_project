@@ -13,11 +13,11 @@ import javax.validation.Valid;
 import java.time.Instant;
 
 @RestController
-public class BaseController {
+public class MainController {
     private final ItemService itemService;
 
     @Autowired
-    public BaseController(ItemService importService) {
+    public MainController(ItemService importService) {
         this.itemService = importService;
     }
 
