@@ -2,6 +2,7 @@ package com.mayosen.academy.controllers;
 
 import com.mayosen.academy.requests.imports.SystemItemImportRequest;
 import com.mayosen.academy.responses.items.ItemResponse;
+import com.mayosen.academy.responses.updates.SystemItemHistoryResponse;
 import com.mayosen.academy.services.ItemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -32,5 +33,10 @@ public class BaseController {
     @GetMapping("/nodes/{id}")
     public ResponseEntity<ItemResponse> getItem(@PathVariable String id) {
         return ResponseEntity.ok(itemService.getNode(id));
+    }
+
+    @GetMapping("/updates")
+    public ResponseEntity<SystemItemHistoryResponse> getUpdates(@RequestParam Instant date) {
+        return ResponseEntity.ok(itemService.getUpdates(date));
     }
 }

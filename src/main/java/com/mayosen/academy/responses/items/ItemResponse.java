@@ -38,11 +38,11 @@ public class ItemResponse {
     }
 
     public ItemResponse(SystemItem item) {
-        this.id = item.getId();
-        this.url = item.getUrl();
-        this.type = item.getType();
-        this.parent = item.getParent();
-        this.date = item.getDate();
-        this.size = item.getSize();
+        id = item.getId();
+        url = item.getUrl();
+        type = item.getType();
+        parent = item.getParent();
+        date = item.getDate();
+        size = item.getSize();
     }
 }
