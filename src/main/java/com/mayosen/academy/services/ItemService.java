@@ -66,7 +66,8 @@ public class ItemService {
     }
 
     private void saveAll(List<SystemItemImport> imports, Instant updateDate) {
-        List<SystemItem> toSave = new ArrayList<>();
+        List<SystemItem> items = new ArrayList<>(imports.size());
+        List<ItemUpdate> updates = new ArrayList<>(imports.size());
 
         for (SystemItemImport current : imports) {
             SystemItem item = systemItemRepo.findById(current.getId()).orElseGet(SystemItem::new);
@@ -91,6 +92,11 @@ public class ItemService {
 
             SystemItem parent = null;
 
+            // Обновляем старых родителей
+            if (item.getParent() != null) {
+                updateParents(item, updateDate);
+            }
+
             if (current.getParentId() != null) {
                 // Поскольку папки сохраняются первее файлов, родитель уже существует в базе
                 parent = systemItemRepo.findById(current.getParentId())
@@ -99,6 +105,11 @@ public class ItemService {
                 if (parent.getType() != SystemItemType.FOLDER) {
                     throw new ValidationException("Родителем может быть только папка");
                 }
+
+                // Обновляем новых родителей
+                parent.setDate(updateDate);
+                items.add(parent);
+                updateParents(parent, updateDate);
             }
 
             item.setId(current.getId());
@@ -107,10 +118,27 @@ public class ItemService {
             item.setParent(parent);
             item.setType(current.getType());
             item.setSize(current.getSize());
-            toSave.add(item);
+            items.add(item);
+            updates.add(new ItemUpdate(item, updateDate));
         }
 
-        systemItemRepo.saveAll(toSave);
+        systemItemRepo.saveAll(items);
+        itemUpdateRepo.saveAll(updates);
+    }
+
+    private void updateParents(SystemItem item, Instant updateDate) {
+        SystemItem current = item;
+        ItemUpdate update;
+        Map<String, Long> knownSizes = new HashMap<>();
+
+        while (current.getParent() != null) {
+            current = current.getParent();
+            current.setDate(updateDate);
+            current.setSize(getItemSize(current, knownSizes));
+            update = new ItemUpdate(current, updateDate);
+            systemItemRepo.save(current);
+            itemUpdateRepo.save(update);
+        }
     }
 
     private SystemItem findById(String id) {
@@ -120,17 +148,8 @@ public class ItemService {
     @Transactional
     public void delete(String id, Instant updateDate) {
         SystemItem item = findById(id);
-        SystemItem current = item;
-        List<SystemItem> parents = new ArrayList<>();
-
-        while (current.getParent() != null) {
-            current = current.getParent();
-            current.setDate(updateDate);
-            parents.add(current);
-        }
-
         systemItemRepo.delete(item);
-        systemItemRepo.saveAll(parents);
+        updateParents(item, updateDate);
     }
 
     @Transactional
@@ -200,27 +219,26 @@ public class ItemService {
         return new SystemItemHistoryResponse(units);
     }
 
-    private Long getItemSize(SystemItem item, Map<String, Long> folderSizes) {
+    private Long getItemSize(SystemItem item, Map<String, Long> knownSizes) {
         Long size;
 
         if (item.getType() == SystemItemType.FILE) {
             size = item.getSize();
         } else {
-            size = folderSizes.get(item.getId());
+            size = knownSizes.get(item.getId());
 
             if (size == null) {
                 size = 0L;
                 List<SystemItem> children = item.getChildren();
-                Long currentSize;
 
                 if (children != null) {
                     for (SystemItem child : children) {
-                        currentSize = getItemSize(child, folderSizes);
+                        Long currentSize = getItemSize(child, knownSizes);
                         size += currentSize;
                     }
-
-                    folderSizes.put(item.getId(), size);
                 }
+
+                knownSizes.put(item.getId(), size);
             }
         }
 

@@ -14,3 +14,6 @@ logging:
 spring:
   jpa:
     open-in-view: true
+    properties:
+      hibernate:
+        generate_statistics: true

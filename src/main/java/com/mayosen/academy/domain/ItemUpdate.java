@@ -15,6 +15,7 @@ import java.time.Instant;
 public class ItemUpdate {
     @Id
     @Column(name = "update_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -36,4 +37,13 @@ public class ItemUpdate {
 
     @Column(name = "size")
     private Long size;
+
+    public ItemUpdate(SystemItem item, Instant date) {
+        this.item = item;
+        this.url = item.getUrl();
+        this.date = date;
+        this.parentId = item.getParent() != null ? item.getParent().getId() : null;
+        this.type = item.getType();
+        this.size = item.getSize();
+    }
 }
