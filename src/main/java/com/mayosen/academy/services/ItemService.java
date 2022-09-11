@@ -124,6 +124,7 @@ public class ItemService {
         systemItemRepo.saveAll(parents);
     }
 
+    @Transactional
     public ItemResponse getNode(String id) {
         SystemItem rootItem = findById(id);
         ItemResponse response = new ItemResponse(rootItem);
