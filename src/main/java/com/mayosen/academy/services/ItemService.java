@@ -7,6 +7,8 @@ import com.mayosen.academy.repos.SystemItemRepo;
 import com.mayosen.academy.requests.imports.SystemItemImport;
 import com.mayosen.academy.requests.imports.SystemItemImportRequest;
 import com.mayosen.academy.responses.items.ItemResponse;
+import com.mayosen.academy.responses.updates.SystemItemHistoryResponse;
+import com.mayosen.academy.responses.updates.SystemItemHistoryUnit;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,8 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.validation.ValidationException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Log4j2
 @Service
@@ -72,7 +77,7 @@ public class ItemService {
                 } else if (current.getSize() != null) {
                     throw new ValidationException("Поле size должно быть пустым у папки");
                 }
-            } else if (current.getType() == SystemItemType.FILE) {
+            } else {
                 if (current.getUrl() == null) {
                     throw new ValidationException("Поле url не должно быть пустым у файла");
                 } else if (current.getSize() == null || !(current.getSize() > 0)) {
@@ -124,6 +129,7 @@ public class ItemService {
         systemItemRepo.saveAll(parents);
     }
 
+    @Transactional
     public ItemResponse getNode(String id) {
         SystemItem rootItem = findById(id);
         ItemResponse response = new ItemResponse(rootItem);
@@ -131,7 +137,7 @@ public class ItemService {
         return response;
     }
 
-    public Long setChildren(ItemResponse response, List<SystemItem> itemChildren) {
+    private Long setChildren(ItemResponse response, List<SystemItem> itemChildren) {
         Long size = 0L;
         List<ItemResponse> responseChildren = null;
 
@@ -161,6 +167,59 @@ public class ItemService {
         }
 
         response.setChildren(responseChildren);
+        return size;
+    }
+
+    @Transactional
+    public SystemItemHistoryResponse getUpdates(Instant dateTo) {
+        Instant dateFrom = dateTo.minus(24, ChronoUnit.HOURS);
+        List<SystemItem> items = systemItemRepo.findAllByDateBetween(dateFrom, dateTo);
+
+        List<SystemItemHistoryUnit> units = new ArrayList<>(items.size());
+        Map<String, Long> folderSizes = new HashMap<>();
+        SystemItem parent;
+        Long size;
+
+        for (SystemItem item : items) {
+            SystemItemHistoryUnit unit = new SystemItemHistoryUnit();
+            unit.setId(item.getId());
+            unit.setUrl(item.getUrl());
+            parent = item.getParent();
+            unit.setParentId(parent == null ? null : parent.getId());
+            unit.setType(item.getType());
+            size = getItemSize(item, folderSizes);
+            unit.setSize(size);
+            unit.setDate(item.getDate());
+            units.add(unit);
+        }
+
+        return new SystemItemHistoryResponse(units);
+    }
+
+    private Long getItemSize(SystemItem item, Map<String, Long> folderSizes) {
+        Long size;
+
+        if (item.getType() == SystemItemType.FILE) {
+            size = item.getSize();
+        } else {
+            size = folderSizes.get(item.getId());
+
+            if (size == null) {
+                size = 0L;
+                List<SystemItem> children = item.getChildren();
+                Long currentSize;
+
+                if (children != null) {
+                    for (SystemItem child : children) {
+                        currentSize = getItemSize(child, folderSizes);
+                        size += currentSize;
+                    }
+
+                    folderSizes.put(item.getId(), size);
+                }
+            }
+        }
+
         return size;
     }
 }
