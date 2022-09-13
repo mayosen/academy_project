@@ -160,7 +160,7 @@ public class ItemService {
         systemItemRepo.delete(item);
 
         if (item.getParent() != null) {
-            updateParents(item.getParent(), item.getSize(), updateDate);
+            updateParents(item.getParent(), item.getSize(), updateDate, Collections.emptySet());
         }
     }
 
@@ -190,11 +190,7 @@ public class ItemService {
         systemItemRepo.saveAll(parents);
         itemUpdateRepo.saveAll(updates);
     }
-
-    private void updateParents(SystemItem rootParent, long itemSize, Instant updateDate) {
-        updateParents(rootParent, itemSize, updateDate, Collections.emptySet());
-    }
-
+    
     private Long getItemSize(SystemItem item, Map<String, Long> knownSizes) {
         Long size;
 
