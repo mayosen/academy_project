@@ -39,8 +39,8 @@ public class MainController {
     }
 
     @GetMapping("/updates")
-    public ResponseEntity<SystemItemHistoryResponse> getLastUpdates(@RequestParam Instant date) {
-        return ResponseEntity.ok(itemService.getLastUpdates(date));
+    public ResponseEntity<SystemItemHistoryResponse> getLastUpdatedFiles(@RequestParam Instant date) {
+        return ResponseEntity.ok(itemService.getLastUpdatedFiles(date));
     }
 
     @GetMapping({"/node/{id}/history", "/node//history"})

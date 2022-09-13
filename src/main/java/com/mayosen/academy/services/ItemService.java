@@ -11,7 +11,6 @@ import com.mayosen.academy.requests.SystemItemImportRequest;
 import com.mayosen.academy.responses.items.ItemResponse;
 import com.mayosen.academy.responses.updates.SystemItemHistoryResponse;
 import com.mayosen.academy.responses.updates.SystemItemHistoryUnit;
-import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -152,6 +151,32 @@ public class ItemService {
         itemUpdateRepo.saveAll(updates);
     }
 
+    private Long getItemSize(SystemItem item, Map<String, Long> knownSizes) {
+        Long size;
+
+        if (item.getType() == SystemItemType.FILE) {
+            size = item.getSize();
+        } else {
+            size = knownSizes.get(item.getId());
+
+            if (size == null) {
+                size = 0L;
+                List<SystemItem> children = item.getChildren();
+
+                if (children != null) {
+                    for (SystemItem child : children) {
+                        Long currentSize = getItemSize(child, knownSizes);
+                        size += currentSize;
+                    }
+                }
+
+                knownSizes.put(item.getId(), size);
+            }
+        }
+
+        return size;
+    }
+
     @Transactional
     public ItemResponse getNode(String id) {
         SystemItem rootItem = findById(id);
@@ -186,57 +211,12 @@ public class ItemService {
     }
 
     @Transactional
-    public SystemItemHistoryResponse getLastUpdates(Instant dateTo) {
-        // TODO: Переделать
-
+    public SystemItemHistoryResponse getLastUpdatedFiles(Instant dateTo) {
         Instant dateFrom = dateTo.minus(24, ChronoUnit.HOURS);
-        List<SystemItem> items = systemItemRepo.findAllByDateBetween(dateFrom, dateTo);
-
-        List<SystemItemHistoryUnit> units = new ArrayList<>(items.size());
-        Map<String, Long> folderSizes = new HashMap<>();
-        SystemItem parent;
-        Long size;
-
-        for (SystemItem item : items) {
-            SystemItemHistoryUnit unit = new SystemItemHistoryUnit();
-            unit.setId(item.getId());
-            unit.setUrl(item.getUrl());
-            parent = item.getParent();
-            unit.setParentId(parent == null ? null : parent.getId());
-            unit.setType(item.getType());
-            size = getItemSize(item, folderSizes);
-            unit.setSize(size);
-            unit.setDate(item.getDate());
-            units.add(unit);
-        }
+        List<SystemItem> items = systemItemRepo.findAllByDateBetweenAndType(dateFrom, dateTo, SystemItemType.FILE);
+        List<SystemItemHistoryUnit> units = items.stream().map(SystemItemHistoryUnit::new).toList();
 
         return new SystemItemHistoryResponse(units);
-    }
-
-    private Long getItemSize(SystemItem item, Map<String, Long> knownSizes) {
-        Long size;
-
-        if (item.getType() == SystemItemType.FILE) {
-            size = item.getSize();
-        } else {
-            size = knownSizes.get(item.getId());
-
-            if (size == null) {
-                size = 0L;
-                List<SystemItem> children = item.getChildren();
-
-                if (children != null) {
-                    for (SystemItem child : children) {
-                        Long currentSize = getItemSize(child, knownSizes);
-                        size += currentSize;
-                    }
-                }
-
-                knownSizes.put(item.getId(), size);
-            }
-        }
-
-        return size;
     }
 
     @Transactional
@@ -257,6 +237,5 @@ public class ItemService {
         List<SystemItemHistoryUnit> units = updates.stream().map(SystemItemHistoryUnit::new).toList();
 
         return new SystemItemHistoryResponse(units);
-
     }
 }

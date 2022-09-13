@@ -1,6 +1,7 @@
 package com.mayosen.academy.responses.updates;
 
 import com.mayosen.academy.domain.ItemUpdate;
+import com.mayosen.academy.domain.SystemItem;
 import com.mayosen.academy.domain.SystemItemType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -28,5 +29,14 @@ public class SystemItemHistoryUnit {
         type = update.getType();
         size = update.getSize();
         date = update.getDate();
+    }
+
+    public SystemItemHistoryUnit(SystemItem item) {
+        id = item.getId();
+        url = item.getUrl();
+        parentId = item.getParent() != null ? item.getParent().getId() : null;
+        type = item.getType();
+        size = item.getSize();
+        date = item.getDate();
     }
 }
