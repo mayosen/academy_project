@@ -109,6 +109,7 @@ public class ItemService {
             Deque<SystemItem> childBranch = new LinkedList<>();
             childBranch.addLast(current);
 
+            // Устанавливаем размер родителям
             while (current.getParent() != null) {
                 current = current.getParent();
                 current.setSize(getItemSize(current, knownSizes));
@@ -135,22 +136,20 @@ public class ItemService {
     public void deleteItem(String id, Instant updateDate) {
         SystemItem item = findById(id);
         systemItemRepo.delete(item);
-        updateParents(item, updateDate, new HashMap<>());
-        // TODO: Переделать
-    }
-
-    private void updateParents(SystemItem item, Instant updateDate, Map<String, Long> knownSizes) {
         SystemItem current = item;
-        ItemUpdate update;
+        List<SystemItem> parents = new ArrayList<>();
+        List<ItemUpdate> updates = new ArrayList<>();
 
         while (current.getParent() != null) {
             current = current.getParent();
             current.setDate(updateDate);
-            current.setSize(getItemSize(current, knownSizes));
-            update = new ItemUpdate(current);
-            systemItemRepo.save(current);
-            itemUpdateRepo.save(update);
+            current.setSize(current.getSize() - item.getSize());
+            parents.add(current);
+            updates.add(new ItemUpdate(current));
         }
+
+        systemItemRepo.saveAll(parents);
+        itemUpdateRepo.saveAll(updates);
     }
 
     @Transactional
