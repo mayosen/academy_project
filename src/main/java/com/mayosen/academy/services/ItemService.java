@@ -126,6 +126,7 @@ public class ItemService {
             // Устанавливаем размер новым родителям
             do {
                 size = getItemSize(current, knownSizes);
+                current.setDate(updateDate);
                 current.setSize(size);
                 childBranch.addFirst(current);
                 current = current.getParent();
