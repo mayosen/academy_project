@@ -77,7 +77,7 @@ public class ItemService {
         for (SystemItem item : mappedItems.values()) {
             String parentId = item.getParentId();
 
-            if (item.getParent() != null) {
+            if (item.getParent() != null && !item.getParent().getId().equals(parentId)) {
                 oldParents.add(new ItemParentPair(item));
             }
 
@@ -94,12 +94,7 @@ public class ItemService {
                 }
 
                 item.setParent(parent);
-
-                if (!item.isPersisted()) {
-                    // Если Entity еще не сохранен, приходится заполнять детей руками
-                    // Дети используются при подсчете размера папки
-                    parent.getChildren().add(item);
-                }
+                parent.getChildren().add(item);
             }
         }
 
@@ -107,30 +102,11 @@ public class ItemService {
         Set<SystemItem> sortedItems = new LinkedHashSet<>(itemsSize);
         List<ItemUpdate> updates = new ArrayList<>(itemsSize);
 
-        // Сортировка нужна, чтобы сохранить родителей вперед детей
-        for (SystemItem item : mappedItems.values()) {
-            SystemItem current = item;
-            current.setSize(getItemSize(current, knownSizes));
-            Deque<SystemItem> childBranch = new LinkedList<>();
-            childBranch.addLast(current);
-
-            // Устанавливаем размер новым родителям
-            while (current.getParent() != null) {
-                current = current.getParent();
-                current.setSize(getItemSize(current, knownSizes));
-                childBranch.addFirst(current);
-            }
-
-            sortedItems.addAll(childBranch);
-        }
-
-        for (SystemItem item : sortedItems) {
-            item.getChildren().clear();  // Для корректного сохранения
-            updates.add(new ItemUpdate(item));
-        }
-
         for (ItemParentPair pair : oldParents) {
-            SystemItem current = pair.item;
+            SystemItem oldParent = pair.oldParent;
+            SystemItem item = pair.item;
+            oldParent.getChildren().remove(item);
+            SystemItem current = item;
             Set<SystemItem> newParentsBranch = new HashSet<>();
 
             while (current.getParent() != null) {
@@ -138,7 +114,29 @@ public class ItemService {
                 newParentsBranch.add(current);
             }
 
-            updateParents(pair.oldParent, pair.item.getSize(), updateDate, newParentsBranch);
+            updateParents(oldParent, item.getSize(), updateDate, newParentsBranch);
+        }
+
+        // Сортировка нужна, чтобы сохранить родителей вперед детей
+        for (SystemItem item : mappedItems.values()) {
+            Long size;
+            SystemItem current = item;
+            Deque<SystemItem> childBranch = new LinkedList<>();
+
+            // Устанавливаем размер новым родителям
+            do {
+                size = getItemSize(current, knownSizes);
+                current.setSize(size);
+                childBranch.addFirst(current);
+                current = current.getParent();
+            } while (current != null);
+
+            sortedItems.addAll(childBranch);
+        }
+
+        for (SystemItem item : sortedItems) {
+            item.getChildren().clear();  // Для корректного сохранения
+            updates.add(new ItemUpdate(item));
         }
 
         systemItemRepo.saveAll(sortedItems);
@@ -162,7 +160,7 @@ public class ItemService {
 
         if (item.getParent() != null) {
             updateParents(item.getParent(), item.getSize(), updateDate);
-        };
+        }
     }
 
     private SystemItem findById(String id) {
@@ -185,7 +183,7 @@ public class ItemService {
             parents.add(current);
             updates.add(new ItemUpdate(current));
             current = current.getParent();
-            // Пока не встретим первого родителя, который уже обновлен
+            // Пока не встретим первого родителя, который будет обновлен в другом методе
         } while (current != null && !newParentsBranch.contains(current));
 
         systemItemRepo.saveAll(parents);
@@ -206,7 +204,7 @@ public class ItemService {
 
             if (size == null) {
                 size = 0L;
-                List<SystemItem> children = item.getChildren();
+                Set<SystemItem> children = item.getChildren();
 
                 if (children != null) {
                     for (SystemItem child : children) {
@@ -230,7 +228,7 @@ public class ItemService {
         return response;
     }
 
-    private void setChildren(ItemResponse response, List<SystemItem> itemChildren) {
+    private void setChildren(ItemResponse response, Set<SystemItem> itemChildren) {
         List<ItemResponse> responseChildren = null;
 
         if (response.getType() == SystemItemType.FOLDER) {

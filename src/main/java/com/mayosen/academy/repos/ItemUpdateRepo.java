@@ -1,7 +1,7 @@
 package com.mayosen.academy.repos;
 
-import com.mayosen.academy.domain.SystemItem;
 import com.mayosen.academy.domain.ItemUpdate;
+import com.mayosen.academy.domain.SystemItem;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;

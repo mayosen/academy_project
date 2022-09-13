@@ -5,8 +5,8 @@ import lombok.*;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "system_item")
@@ -41,14 +41,5 @@ public class SystemItem implements Serializable {
     private Long size;
 
     @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
-    private List<SystemItem> children = new ArrayList<>();
-
-    @Transient
-    private boolean persisted;
-
-    @PostLoad
-    @PostPersist
-    public void setPersisted() {
-        persisted = true;
-    }
+    private Set<SystemItem> children = new LinkedHashSet<>();
 }
