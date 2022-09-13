@@ -102,6 +102,7 @@ public class ItemService {
         Set<SystemItem> sortedItems = new LinkedHashSet<>(itemsSize);
         List<ItemUpdate> updates = new ArrayList<>(itemsSize);
 
+        // Сортировка нужна, чтобы сохранить родителей вперед детей
         for (SystemItem item : mappedItems.values()) {
             SystemItem current = item;
             current.setSize(getItemSize(current, knownSizes));
@@ -118,7 +119,7 @@ public class ItemService {
         }
 
         for (SystemItem item : sortedItems) {
-            item.getChildren().clear();  // Для надежного сохранения
+            item.getChildren().clear();  // Для корректного сохранения
             updates.add(new ItemUpdate(item));
         }
 
