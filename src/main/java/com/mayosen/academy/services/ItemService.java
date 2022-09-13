@@ -127,6 +127,18 @@ public class ItemService {
         itemUpdateRepo.saveAll(updates);
     }
 
+    private SystemItem findById(String id) {
+        return systemItemRepo.findById(id).orElseThrow(ItemNotFoundException::new);
+    }
+
+    @Transactional
+    public void deleteItem(String id, Instant updateDate) {
+        SystemItem item = findById(id);
+        systemItemRepo.delete(item);
+        updateParents(item, updateDate, new HashMap<>());
+        // TODO: Переделать
+    }
+
     private void updateParents(SystemItem item, Instant updateDate, Map<String, Long> knownSizes) {
         SystemItem current = item;
         ItemUpdate update;
@@ -139,17 +151,6 @@ public class ItemService {
             systemItemRepo.save(current);
             itemUpdateRepo.save(update);
         }
-    }
-
-    private SystemItem findById(String id) {
-        return systemItemRepo.findById(id).orElseThrow(ItemNotFoundException::new);
-    }
-
-    @Transactional
-    public void deleteItem(String id, Instant updateDate) {
-        SystemItem item = findById(id);
-        systemItemRepo.delete(item);
-        updateParents(item, updateDate, new HashMap<>());
     }
 
     @Transactional
