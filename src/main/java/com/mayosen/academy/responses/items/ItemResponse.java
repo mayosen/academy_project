@@ -26,16 +26,16 @@ public class ItemResponse {
     @JsonIgnore
     private SystemItem parent;
 
+    @JsonProperty("parentId")
+    public String getParentId() {
+        return parent != null ? parent.getId() : null;
+    }
+
     private Instant date;
 
     private Long size;
 
     private List<ItemResponse> children;
-
-    @JsonProperty("parentId")
-    public String getParentId() {
-        return parent != null ? parent.getId() : null;
-    }
 
     public ItemResponse(SystemItem item) {
         id = item.getId();

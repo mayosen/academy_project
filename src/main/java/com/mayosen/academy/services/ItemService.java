@@ -1,11 +1,13 @@
 package com.mayosen.academy.services;
 
+import com.mayosen.academy.domain.ItemUpdate;
 import com.mayosen.academy.domain.SystemItem;
 import com.mayosen.academy.domain.SystemItemType;
 import com.mayosen.academy.exceptions.ItemNotFoundException;
+import com.mayosen.academy.repos.ItemUpdateRepo;
 import com.mayosen.academy.repos.SystemItemRepo;
-import com.mayosen.academy.requests.imports.SystemItemImport;
-import com.mayosen.academy.requests.imports.SystemItemImportRequest;
+import com.mayosen.academy.requests.SystemItemImport;
+import com.mayosen.academy.requests.SystemItemImportRequest;
 import com.mayosen.academy.responses.items.ItemResponse;
 import com.mayosen.academy.responses.updates.SystemItemHistoryResponse;
 import com.mayosen.academy.responses.updates.SystemItemHistoryUnit;
@@ -17,116 +19,202 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.validation.ValidationException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Log4j2
 @Service
 public class ItemService {
     private final SystemItemRepo systemItemRepo;
+    private final ItemUpdateRepo itemUpdateRepo;
 
     @Autowired
-    public ItemService(SystemItemRepo systemItemRepo) {
+    public ItemService(SystemItemRepo systemItemRepo, ItemUpdateRepo itemUpdateRepo) {
         this.systemItemRepo = systemItemRepo;
+        this.itemUpdateRepo = itemUpdateRepo;
     }
 
     @Transactional
-    public void insertOrUpdate(SystemItemImportRequest request) {
-        List<SystemItemImport> rootItems = new ArrayList<>();
-        List<SystemItemImport> folders = new ArrayList<>();
-        List<SystemItemImport> files = new ArrayList<>();
-
-        for (SystemItemImport current : request.getItems()) {
-            if (current.getType() == SystemItemType.FOLDER) {
-                if (current.getParentId() == null) {
-                    rootItems.add(current);
-                } else {
-                    folders.add(current);
-                }
-            } else {
-                files.add(current);
-            }
-        }
-
-        log.debug(String.format(
-                "Separating request: root items: %d, folders: %d, files: %d",
-                rootItems.size(), folders.size(), files.size())
-        );
-
+    public void updateItems(SystemItemImportRequest request) {
         Instant updateDate = request.getUpdateDate();
-        saveAll(rootItems, updateDate);
-        saveAll(folders, updateDate);
-        saveAll(files, updateDate);
-    }
+        int itemsSize = request.getItems().size();
+        Map<String, SystemItem> mappedItems = new HashMap<>(itemsSize);
 
-    private void saveAll(List<SystemItemImport> imports, Instant updateDate) {
-        List<SystemItem> toSave = new ArrayList<>();
+        for (SystemItemImport importItem : request.getItems()) {
+            Long size = importItem.getSize();
 
-        for (SystemItemImport current : imports) {
-            SystemItem item = systemItemRepo.findById(current.getId()).orElseGet(SystemItem::new);
+            SystemItem item = systemItemRepo.findById(importItem.getId()).orElseGet(SystemItem::new);
 
-            if (item.getId() != null && current.getType() != item.getType()) {
+            if (item.getId() != null && importItem.getType() != item.getType()) {
                 throw new ValidationException("Нельзя менять тип элемента");
             }
 
-            if (current.getType() == SystemItemType.FOLDER) {
-                if (current.getUrl() != null) {
+            if (importItem.getType() == SystemItemType.FOLDER) {
+                if (importItem.getUrl() != null) {
                     throw new ValidationException("Поле url должно быть пустым у папки");
-                } else if (current.getSize() != null) {
+                } else if (importItem.getSize() != null) {
                     throw new ValidationException("Поле size должно быть пустым у папки");
                 }
             } else {
-                if (current.getUrl() == null) {
+                if (importItem.getUrl() == null) {
                     throw new ValidationException("Поле url не должно быть пустым у файла");
-                } else if (current.getSize() == null || !(current.getSize() > 0)) {
+                } else if (importItem.getSize() == null || !(importItem.getSize() > 0)) {
                     throw new ValidationException("Поле size должно быть больше 0 у файла");
                 }
             }
 
-            SystemItem parent = null;
+            item.setId(importItem.getId());
+            item.setUrl(importItem.getUrl());
+            item.setDate(updateDate);
+            item.setParentId(importItem.getParentId());
+            item.setType(importItem.getType());
+            item.setSize(size);
 
-            if (current.getParentId() != null) {
-                // Поскольку папки сохраняются первее файлов, родитель уже существует в базе
-                parent = systemItemRepo.findById(current.getParentId())
-                        .orElseThrow(() -> new ValidationException("Родитель не найден"));
+            mappedItems.put(item.getId(), item);
+        }
+
+        List<ItemParentPair> oldParents = new ArrayList<>();
+
+        for (SystemItem item : mappedItems.values()) {
+            String parentId = item.getParentId();
+
+            if (item.getParent() != null && !item.getParent().getId().equals(parentId)) {
+                oldParents.add(new ItemParentPair(item));
+            }
+
+            if (parentId != null) {
+                SystemItem parent = mappedItems.get(parentId);
+
+                if (parent == null) {
+                    parent = systemItemRepo.findById(parentId)
+                            .orElseThrow(() -> new ValidationException("Родитель не найден"));
+                }
 
                 if (parent.getType() != SystemItemType.FOLDER) {
                     throw new ValidationException("Родителем может быть только папка");
                 }
-            }
 
-            item.setId(current.getId());
-            item.setUrl(current.getUrl());
-            item.setDate(updateDate);
-            item.setParent(parent);
-            item.setType(current.getType());
-            item.setSize(current.getSize());
-            toSave.add(item);
+                item.setParent(parent);
+                parent.getChildren().add(item);
+            }
         }
 
-        systemItemRepo.saveAll(toSave);
+        Map<String, Long> knownSizes = new HashMap<>(itemsSize);
+        Set<SystemItem> sortedItems = new LinkedHashSet<>(itemsSize);
+        List<ItemUpdate> updates = new ArrayList<>(itemsSize);
+
+        for (ItemParentPair pair : oldParents) {
+            SystemItem oldParent = pair.oldParent;
+            SystemItem item = pair.item;
+            oldParent.getChildren().remove(item);
+            SystemItem current = item;
+            Set<SystemItem> newParentsBranch = new HashSet<>();
+
+            while (current.getParent() != null) {
+                current = current.getParent();
+                newParentsBranch.add(current);
+            }
+
+            updateParents(oldParent, item.getSize(), updateDate, newParentsBranch);
+        }
+
+        // Сортировка нужна, чтобы сохранить родителей вперед детей
+        for (SystemItem item : mappedItems.values()) {
+            Long size;
+            SystemItem current = item;
+            Deque<SystemItem> childBranch = new LinkedList<>();
+
+            // Устанавливаем размер новым родителям
+            do {
+                size = getItemSize(current, knownSizes);
+                current.setDate(updateDate);
+                current.setSize(size);
+                childBranch.addFirst(current);
+                current = current.getParent();
+            } while (current != null);
+
+            sortedItems.addAll(childBranch);
+        }
+
+        for (SystemItem item : sortedItems) {
+            item.getChildren().clear();  // Для корректного сохранения
+            updates.add(new ItemUpdate(item));
+        }
+
+        systemItemRepo.saveAll(sortedItems);
+        itemUpdateRepo.saveAll(updates);
+    }
+
+    private static class ItemParentPair {
+        SystemItem oldParent;
+        SystemItem item;
+
+        public ItemParentPair(SystemItem item) {
+            this.oldParent = item.getParent();
+            this.item = item;
+        }
+    }
+
+    @Transactional
+    public void deleteItem(String id, Instant updateDate) {
+        SystemItem item = findById(id);
+        systemItemRepo.delete(item);
+
+        if (item.getParent() != null) {
+            updateParents(item.getParent(), item.getSize(), updateDate, Collections.emptySet());
+        }
     }
 
     private SystemItem findById(String id) {
         return systemItemRepo.findById(id).orElseThrow(ItemNotFoundException::new);
     }
 
-    @Transactional
-    public void delete(String id, Instant updateDate) {
-        SystemItem item = findById(id);
-        SystemItem current = item;
+    private void updateParents(
+            SystemItem rootParent,
+            long itemSize,
+            Instant updateDate,
+            Set<SystemItem> newParentsBranch
+    ) {
+        SystemItem current = rootParent;
         List<SystemItem> parents = new ArrayList<>();
+        List<ItemUpdate> updates = new ArrayList<>();
 
-        while (current.getParent() != null) {
-            current = current.getParent();
+        do {
             current.setDate(updateDate);
+            current.setSize(current.getSize() - itemSize);
             parents.add(current);
+            updates.add(new ItemUpdate(current));
+            current = current.getParent();
+            // Пока не встретим первого родителя, который будет обновлен в другом методе
+        } while (current != null && !newParentsBranch.contains(current));
+
+        systemItemRepo.saveAll(parents);
+        itemUpdateRepo.saveAll(updates);
+    }
+    
+    private Long getItemSize(SystemItem item, Map<String, Long> knownSizes) {
+        Long size;
+
+        if (item.getType() == SystemItemType.FILE) {
+            size = item.getSize();
+        } else {
+            size = knownSizes.get(item.getId());
+
+            if (size == null) {
+                size = 0L;
+                Set<SystemItem> children = item.getChildren();
+
+                if (children != null) {
+                    for (SystemItem child : children) {
+                        Long currentSize = getItemSize(child, knownSizes);
+                        size += currentSize;
+                    }
+                }
+
+                knownSizes.put(item.getId(), size);
+            }
         }
 
-        systemItemRepo.delete(item);
-        systemItemRepo.saveAll(parents);
+        return size;
     }
 
     @Transactional
@@ -137,89 +225,57 @@ public class ItemService {
         return response;
     }
 
-    private Long setChildren(ItemResponse response, List<SystemItem> itemChildren) {
-        Long size = 0L;
+    private void setChildren(ItemResponse response, Set<SystemItem> itemChildren) {
         List<ItemResponse> responseChildren = null;
 
         if (response.getType() == SystemItemType.FOLDER) {
             responseChildren = new ArrayList<>();
             ItemResponse currentResponse;
-            Long currentSize;
 
             if (itemChildren != null) {
                 for (SystemItem item : itemChildren) {
                     currentResponse = new ItemResponse(item);
 
                     if (item.getType() == SystemItemType.FILE) {
-                        currentSize = item.getSize();
                         currentResponse.setChildren(null);
                     } else {
-                        currentSize = setChildren(currentResponse, item.getChildren());
+                        setChildren(currentResponse, item.getChildren());
                     }
 
-                    currentResponse.setSize(currentSize);
                     responseChildren.add(currentResponse);
-                    size += currentSize;
                 }
             }
-
-            response.setSize(size);
         }
 
         response.setChildren(responseChildren);
-        return size;
     }
 
     @Transactional
-    public SystemItemHistoryResponse getUpdates(Instant dateTo) {
+    public SystemItemHistoryResponse getLastUpdatedFiles(Instant dateTo) {
         Instant dateFrom = dateTo.minus(24, ChronoUnit.HOURS);
-        List<SystemItem> items = systemItemRepo.findAllByDateBetween(dateFrom, dateTo);
-
-        List<SystemItemHistoryUnit> units = new ArrayList<>(items.size());
-        Map<String, Long> folderSizes = new HashMap<>();
-        SystemItem parent;
-        Long size;
-
-        for (SystemItem item : items) {
-            SystemItemHistoryUnit unit = new SystemItemHistoryUnit();
-            unit.setId(item.getId());
-            unit.setUrl(item.getUrl());
-            parent = item.getParent();
-            unit.setParentId(parent == null ? null : parent.getId());
-            unit.setType(item.getType());
-            size = getItemSize(item, folderSizes);
-            unit.setSize(size);
-            unit.setDate(item.getDate());
-            units.add(unit);
-        }
+        List<SystemItem> items = systemItemRepo.findAllByDateBetweenAndType(dateFrom, dateTo, SystemItemType.FILE);
+        List<SystemItemHistoryUnit> units = items.stream().map(SystemItemHistoryUnit::new).toList();
 
         return new SystemItemHistoryResponse(units);
     }
 
-    private Long getItemSize(SystemItem item, Map<String, Long> folderSizes) {
-        Long size;
+    @Transactional
+    public SystemItemHistoryResponse getNodeHistory(String id, Instant dateStart, Instant dateEnd) {
+        SystemItem item = findById(id);
+        List<ItemUpdate> updates;
 
-        if (item.getType() == SystemItemType.FILE) {
-            size = item.getSize();
+        if (dateStart == null && dateEnd == null) {
+            updates = itemUpdateRepo.findAllByItem(item);
+        } else if (dateStart != null && dateEnd != null) {
+            updates = itemUpdateRepo.findAllByItemAndDateInterval(item, dateStart, dateEnd);
+        } else if (dateStart != null) {
+            updates = itemUpdateRepo.findAllByItemAndDateFrom(item, dateStart);
         } else {
-            size = folderSizes.get(item.getId());
-
-            if (size == null) {
-                size = 0L;
-                List<SystemItem> children = item.getChildren();
-                Long currentSize;
-
-                if (children != null) {
-                    for (SystemItem child : children) {
-                        currentSize = getItemSize(child, folderSizes);
-                        size += currentSize;
-                    }
-
-                    folderSizes.put(item.getId(), size);
-                }
-            }
+            updates = itemUpdateRepo.findAllByItemAndDateTo(item, dateEnd);
         }
 
-        return size;
+        List<SystemItemHistoryUnit> units = updates.stream().map(SystemItemHistoryUnit::new).toList();
+
+        return new SystemItemHistoryResponse(units);
     }
 }
