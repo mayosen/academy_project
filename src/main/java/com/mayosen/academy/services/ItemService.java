@@ -72,8 +72,14 @@ public class ItemService {
             mappedItems.put(item.getId(), item);
         }
 
+        List<ItemParentPair> oldParents = new ArrayList<>();
+
         for (SystemItem item : mappedItems.values()) {
             String parentId = item.getParentId();
+
+            if (item.getParent() != null) {
+                oldParents.add(new ItemParentPair(item));
+            }
 
             if (parentId != null) {
                 SystemItem parent = mappedItems.get(parentId);
@@ -108,7 +114,7 @@ public class ItemService {
             Deque<SystemItem> childBranch = new LinkedList<>();
             childBranch.addLast(current);
 
-            // Устанавливаем размер родителям
+            // Устанавливаем размер новым родителям
             while (current.getParent() != null) {
                 current = current.getParent();
                 current.setSize(getItemSize(current, knownSizes));
@@ -123,32 +129,71 @@ public class ItemService {
             updates.add(new ItemUpdate(item));
         }
 
+        for (ItemParentPair pair : oldParents) {
+            SystemItem current = pair.item;
+            Set<SystemItem> newParentsBranch = new HashSet<>();
+
+            while (current.getParent() != null) {
+                current = current.getParent();
+                newParentsBranch.add(current);
+            }
+
+            updateParents(pair.oldParent, pair.item.getSize(), updateDate, newParentsBranch);
+        }
+
         systemItemRepo.saveAll(sortedItems);
         itemUpdateRepo.saveAll(updates);
     }
 
-    private SystemItem findById(String id) {
-        return systemItemRepo.findById(id).orElseThrow(ItemNotFoundException::new);
+    private static class ItemParentPair {
+        SystemItem oldParent;
+        SystemItem item;
+
+        public ItemParentPair(SystemItem item) {
+            this.oldParent = item.getParent();
+            this.item = item;
+        }
     }
 
     @Transactional
     public void deleteItem(String id, Instant updateDate) {
         SystemItem item = findById(id);
         systemItemRepo.delete(item);
-        SystemItem current = item;
+
+        if (item.getParent() != null) {
+            updateParents(item.getParent(), item.getSize(), updateDate);
+        };
+    }
+
+    private SystemItem findById(String id) {
+        return systemItemRepo.findById(id).orElseThrow(ItemNotFoundException::new);
+    }
+
+    private void updateParents(
+            SystemItem rootParent,
+            long itemSize,
+            Instant updateDate,
+            Set<SystemItem> newParentsBranch
+    ) {
+        SystemItem current = rootParent;
         List<SystemItem> parents = new ArrayList<>();
         List<ItemUpdate> updates = new ArrayList<>();
 
-        while (current.getParent() != null) {
-            current = current.getParent();
+        do {
             current.setDate(updateDate);
-            current.setSize(current.getSize() - item.getSize());
+            current.setSize(current.getSize() - itemSize);
             parents.add(current);
             updates.add(new ItemUpdate(current));
-        }
+            current = current.getParent();
+            // Пока не встретим первого родителя, который уже обновлен
+        } while (current != null && !newParentsBranch.contains(current));
 
         systemItemRepo.saveAll(parents);
         itemUpdateRepo.saveAll(updates);
+    }
+
+    private void updateParents(SystemItem rootParent, long itemSize, Instant updateDate) {
+        updateParents(rootParent, itemSize, updateDate, Collections.emptySet());
     }
 
     private Long getItemSize(SystemItem item, Map<String, Long> knownSizes) {
