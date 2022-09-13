@@ -1,6 +1,6 @@
 package com.mayosen.academy.controllers;
 
-import com.mayosen.academy.requests.imports.SystemItemImportRequest;
+import com.mayosen.academy.requests.SystemItemImportRequest;
 import com.mayosen.academy.responses.items.ItemResponse;
 import com.mayosen.academy.responses.updates.SystemItemHistoryResponse;
 import com.mayosen.academy.services.ItemService;
@@ -23,17 +23,17 @@ public class MainController {
 
     @PostMapping("/imports")
     public void updateItems(@Valid @RequestBody SystemItemImportRequest request) {
-        itemService.insertOrUpdate(request);
+        itemService.updateItems(request);
     }
 
     @DeleteMapping({"/delete/{id}", "/delete"})
     public void deleteItem(@PathVariable(required = false) String id, @RequestParam Instant date) {
         id = PathUtil.processNullId(id);
-        itemService.delete(id, date);
+        itemService.deleteItem(id, date);
     }
 
     @GetMapping({"/nodes/{id}", "/nodes"})
-    public ResponseEntity<ItemResponse> getItem(@PathVariable(required = false) String id) {
+    public ResponseEntity<ItemResponse> getNode(@PathVariable(required = false) String id) {
         id = PathUtil.processNullId(id);
         return ResponseEntity.ok(itemService.getNode(id));
     }

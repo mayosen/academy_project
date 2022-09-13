@@ -6,11 +6,12 @@ import com.mayosen.academy.domain.SystemItemType;
 import com.mayosen.academy.exceptions.ItemNotFoundException;
 import com.mayosen.academy.repos.ItemUpdateRepo;
 import com.mayosen.academy.repos.SystemItemRepo;
-import com.mayosen.academy.requests.imports.SystemItemImport;
-import com.mayosen.academy.requests.imports.SystemItemImportRequest;
+import com.mayosen.academy.requests.SystemItemImport;
+import com.mayosen.academy.requests.SystemItemImportRequest;
 import com.mayosen.academy.responses.items.ItemResponse;
 import com.mayosen.academy.responses.updates.SystemItemHistoryResponse;
 import com.mayosen.academy.responses.updates.SystemItemHistoryUnit;
+import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,10 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.validation.ValidationException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Log4j2
 @Service
@@ -37,93 +35,94 @@ public class ItemService {
     }
 
     @Transactional
-    public void insertOrUpdate(SystemItemImportRequest request) {
-        List<SystemItemImport> rootItems = new ArrayList<>();
-        List<SystemItemImport> folders = new ArrayList<>();
-        List<SystemItemImport> files = new ArrayList<>();
-
-        for (SystemItemImport current : request.getItems()) {
-            if (current.getType() == SystemItemType.FOLDER) {
-                if (current.getParentId() == null) {
-                    rootItems.add(current);
-                } else {
-                    folders.add(current);
-                }
-            } else {
-                files.add(current);
-            }
-        }
-
-        log.debug(String.format(
-                "Separating request: root items: %d, folders: %d, files: %d",
-                rootItems.size(), folders.size(), files.size())
-        );
-
+    public void updateItems(SystemItemImportRequest request) {
         Instant updateDate = request.getUpdateDate();
-        saveAll(rootItems, updateDate);
-        saveAll(folders, updateDate);
-        saveAll(files, updateDate);
-    }
+        int itemsSize = request.getItems().size();
+        Map<String, SystemItem> mappedItems = new HashMap<>(itemsSize);
 
-    private void saveAll(List<SystemItemImport> imports, Instant updateDate) {
-        List<SystemItem> items = new ArrayList<>(imports.size());
-        List<ItemUpdate> updates = new ArrayList<>(imports.size());
+        for (SystemItemImport importItem : request.getItems()) {
+            Long size = importItem.getSize();
 
-        for (SystemItemImport current : imports) {
-            SystemItem item = systemItemRepo.findById(current.getId()).orElseGet(SystemItem::new);
+            SystemItem item = systemItemRepo.findById(importItem.getId()).orElseGet(SystemItem::new);
 
-            if (item.getId() != null && current.getType() != item.getType()) {
+            if (item.getId() != null && importItem.getType() != item.getType()) {
                 throw new ValidationException("Нельзя менять тип элемента");
             }
 
-            if (current.getType() == SystemItemType.FOLDER) {
-                if (current.getUrl() != null) {
+            if (importItem.getType() == SystemItemType.FOLDER) {
+                if (importItem.getUrl() != null) {
                     throw new ValidationException("Поле url должно быть пустым у папки");
-                } else if (current.getSize() != null) {
+                } else if (importItem.getSize() != null) {
                     throw new ValidationException("Поле size должно быть пустым у папки");
                 }
             } else {
-                if (current.getUrl() == null) {
+                if (importItem.getUrl() == null) {
                     throw new ValidationException("Поле url не должно быть пустым у файла");
-                } else if (current.getSize() == null || !(current.getSize() > 0)) {
+                } else if (importItem.getSize() == null || !(importItem.getSize() > 0)) {
                     throw new ValidationException("Поле size должно быть больше 0 у файла");
                 }
             }
 
-            SystemItem parent = null;
-            Map<String, Long> knownParentSizes = new HashMap<>();
+            item.setId(importItem.getId());
+            item.setUrl(importItem.getUrl());
+            item.setDate(updateDate);
+            item.setParentId(importItem.getParentId());
+            item.setType(importItem.getType());
+            item.setSize(size);
 
-            // Обновляем старого родителя
-            if (item.getParent() != null) {
-                updateParents(item, updateDate, knownParentSizes);
-            }
+            mappedItems.put(item.getId(), item);
+        }
 
-            if (current.getParentId() != null) {
-                // Поскольку папки сохраняются первее файлов, родитель уже существует в базе
-                parent = systemItemRepo.findById(current.getParentId())
-                        .orElseThrow(() -> new ValidationException("Родитель не найден"));
+        for (SystemItem item : mappedItems.values()) {
+            String parentId = item.getParentId();
+
+            if (parentId != null) {
+                SystemItem parent = mappedItems.get(parentId);
+
+                if (parent == null) {
+                    parent = systemItemRepo.findById(parentId)
+                            .orElseThrow(() -> new ValidationException("Родитель не найден"));
+                }
 
                 if (parent.getType() != SystemItemType.FOLDER) {
                     throw new ValidationException("Родителем может быть только папка");
                 }
 
-                // Обновляем нового родителя
-                parent.setDate(updateDate);
-                items.add(parent);
-                updateParents(parent, updateDate, knownParentSizes);
-            }
+                item.setParent(parent);
 
-            item.setId(current.getId());
-            item.setUrl(current.getUrl());
-            item.setDate(updateDate);
-            item.setParent(parent);
-            item.setType(current.getType());
-            item.setSize(current.getSize());
-            items.add(item);
-            updates.add(new ItemUpdate(item, updateDate));
+                if (!item.isPersisted()) {
+                    // Если Entity еще не сохранен, приходится заполнять детей руками
+                    // Дети используются при подсчете размера папки
+                    parent.getChildren().add(item);
+                }
+            }
         }
 
-        systemItemRepo.saveAll(items);
+        Map<String, Long> knownSizes = new HashMap<>(itemsSize);
+        Set<SystemItem> sortedItems = new LinkedHashSet<>(itemsSize);
+        List<ItemUpdate> updates = new ArrayList<>(itemsSize);
+
+        for (SystemItem item : mappedItems.values()) {
+            SystemItem current = item;
+            current.setSize(getItemSize(current, knownSizes));
+            Deque<SystemItem> childBranch = new LinkedList<>();
+            childBranch.addLast(current);
+
+            while (current.getParent() != null) {
+                current = current.getParent();
+                current.setSize(getItemSize(current, knownSizes));
+                childBranch.addFirst(current);
+            }
+
+            sortedItems.addAll(childBranch);
+        }
+
+        for (SystemItem item : sortedItems) {
+            item.getChildren().clear();  // Для надежного сохранения
+            updates.add(new ItemUpdate(item));
+        }
+
+        systemItemRepo.saveAll(sortedItems);
         itemUpdateRepo.saveAll(updates);
     }
 
@@ -135,7 +134,7 @@ public class ItemService {
             current = current.getParent();
             current.setDate(updateDate);
             current.setSize(getItemSize(current, knownSizes));
-            update = new ItemUpdate(current, updateDate);
+            update = new ItemUpdate(current);
             systemItemRepo.save(current);
             itemUpdateRepo.save(update);
         }
@@ -146,7 +145,7 @@ public class ItemService {
     }
 
     @Transactional
-    public void delete(String id, Instant updateDate) {
+    public void deleteItem(String id, Instant updateDate) {
         SystemItem item = findById(id);
         systemItemRepo.delete(item);
         updateParents(item, updateDate, new HashMap<>());
@@ -195,6 +194,8 @@ public class ItemService {
 
     @Transactional
     public SystemItemHistoryResponse getLastUpdates(Instant dateTo) {
+        // TODO: Переделать
+
         Instant dateFrom = dateTo.minus(24, ChronoUnit.HOURS);
         List<SystemItem> items = systemItemRepo.findAllByDateBetween(dateFrom, dateTo);
 

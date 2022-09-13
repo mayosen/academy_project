@@ -1,4 +1,4 @@
-package com.mayosen.academy.requests.imports;
+package com.mayosen.academy.requests;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

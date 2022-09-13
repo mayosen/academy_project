@@ -38,10 +38,10 @@ public class ItemUpdate {
     @Column(name = "size")
     private Long size;
 
-    public ItemUpdate(SystemItem item, Instant date) {
+    public ItemUpdate(SystemItem item) {
         this.item = item;
         this.url = item.getUrl();
-        this.date = date;
+        this.date = item.getDate();
         this.parentId = item.getParent() != null ? item.getParent().getId() : null;
         this.type = item.getType();
         this.size = item.getSize();
