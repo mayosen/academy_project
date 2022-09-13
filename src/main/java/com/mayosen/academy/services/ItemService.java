@@ -160,37 +160,29 @@ public class ItemService {
         return response;
     }
 
-    private Long setChildren(ItemResponse response, List<SystemItem> itemChildren) {
-        Long size = 0L;
+    private void setChildren(ItemResponse response, List<SystemItem> itemChildren) {
         List<ItemResponse> responseChildren = null;
 
         if (response.getType() == SystemItemType.FOLDER) {
             responseChildren = new ArrayList<>();
             ItemResponse currentResponse;
-            Long currentSize;
 
             if (itemChildren != null) {
                 for (SystemItem item : itemChildren) {
                     currentResponse = new ItemResponse(item);
 
                     if (item.getType() == SystemItemType.FILE) {
-                        currentSize = item.getSize();
                         currentResponse.setChildren(null);
                     } else {
-                        currentSize = setChildren(currentResponse, item.getChildren());
+                        setChildren(currentResponse, item.getChildren());
                     }
 
-                    currentResponse.setSize(currentSize);
                     responseChildren.add(currentResponse);
-                    size += currentSize;
                 }
             }
-
-            response.setSize(size);
         }
 
         response.setChildren(responseChildren);
-        return size;
     }
 
     @Transactional
