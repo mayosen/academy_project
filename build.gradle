@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.mayosen'
 version = '1.0.0'
-sourceCompatibility = '18'
+sourceCompatibility = '17'
 
 configurations {
     compileOnly {
