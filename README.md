@@ -6,5 +6,27 @@
 
 # Запуск
 Инструкция по запуску
-1. Установить переменные окружения в файле `.env`  
-(по примеру `.env.example`)
+1. Установить переменные окружения.
+```bash
+$ export \
+  DB_URL=postgresql://localhost:port/database
+  DB_USERNAME=username \
+  DB_PASSWORD=password \
+  SPRING_PROFILES_ACTIVE=dev # Опционально
+```
+2. Запустить проект.
+```bash
+$ gradle clean bootRun
+```
+
+## Docker
+1. Установить переменные окружения или же использовать `.env` файл.
+```bash
+$ export \
+  DB_USERNAME=username \
+  DB_PASSWORD=password \
+```
+2. Запустить контейнер.
+```bash
+$ docker-compose up
+```

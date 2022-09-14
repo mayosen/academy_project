@@ -1,5 +1,5 @@
 server:
-  port: ${PORT}
+  port: 80
 
 logging:
   level:
@@ -24,11 +24,9 @@ spring:
       ddl-auto: validate
     properties:
       hibernate:
-        show_sql: true
         order_inserts: true
         jdbc:
           batch_size: 30
-
 
   flyway:
     baseline-on-migrate: true

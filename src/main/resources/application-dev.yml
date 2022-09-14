@@ -16,4 +16,5 @@ spring:
     open-in-view: true
     properties:
       hibernate:
+        show_sql: true
         generate_statistics: true
