@@ -7,6 +7,9 @@ import lombok.Setter;
 
 import java.util.List;
 
+/**
+ * Объект для групповых запросов на элементы.
+ */
 @Getter
 @Setter
 @NoArgsConstructor

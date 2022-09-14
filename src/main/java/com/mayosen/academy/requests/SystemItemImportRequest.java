@@ -10,6 +10,9 @@ import javax.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * Запрос на добавление/изменение элементов.
+ */
 @Getter
 @Setter
 @NoArgsConstructor

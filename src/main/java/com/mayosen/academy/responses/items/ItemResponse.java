@@ -10,6 +10,9 @@ import lombok.*;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * Объект с информацией об элементе. Включает в себя всех его детей.
+ */
 @Getter
 @Setter
 @NoArgsConstructor

@@ -1,5 +1,6 @@
 package com.mayosen.academy.domain;
 
+import com.mayosen.academy.requests.SystemItemImportRequest;
 import lombok.*;
 
 import javax.persistence.*;
@@ -8,6 +9,9 @@ import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+/**
+ * Сущность элемента.
+ */
 @Entity
 @Table(name = "system_item")
 @Getter
@@ -30,8 +34,12 @@ public class SystemItem implements Serializable {
     @JoinColumn(name = "parent_id")
     private SystemItem parent;
 
+    /**
+     * Служебное поле для связи элемента и предполагаемого нового родителя.
+     * @see com.mayosen.academy.services.ItemService#updateItems(SystemItemImportRequest) 
+     */
     @Transient
-    private String parentId;
+    private String newParentId;
 
     @Column(name = "type")
     @Enumerated(EnumType.STRING)
