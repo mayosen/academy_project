@@ -6,6 +6,9 @@ import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotNull;
 
+/**
+ * Запрос с информацией о добавляемом/обновляемом элементе.
+ */
 @Getter
 @Setter
 @NoArgsConstructor

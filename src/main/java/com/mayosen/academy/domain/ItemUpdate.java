@@ -7,6 +7,9 @@ import lombok.Setter;
 import javax.persistence.*;
 import java.time.Instant;
 
+/**
+ * Сущность обновления элемента.
+ */
 @Entity
 @Table(name = "update_history")
 @Getter

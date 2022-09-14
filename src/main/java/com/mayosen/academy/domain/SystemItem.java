@@ -8,6 +8,9 @@ import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+/**
+ * Сущность элемента.
+ */
 @Entity
 @Table(name = "system_item")
 @Getter
@@ -29,7 +32,7 @@ public class SystemItem implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private SystemItem parent;
-
+    
     @Transient
     private String parentId;
 

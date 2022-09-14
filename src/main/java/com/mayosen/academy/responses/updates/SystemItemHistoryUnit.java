@@ -10,6 +10,9 @@ import lombok.Setter;
 
 import java.time.Instant;
 
+/**
+ * Объект, описывающий единственный элемент.
+ */
 @Getter
 @Setter
 @NoArgsConstructor

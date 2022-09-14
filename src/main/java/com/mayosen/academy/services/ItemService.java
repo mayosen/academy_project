@@ -33,6 +33,11 @@ public class ItemService {
         this.itemUpdateRepo = itemUpdateRepo;
     }
 
+    /**
+     * Добавление и обновление элементов.
+     * @param request объект с обновляемыми элементами
+     * @throws ValidationException ошибка валидации данных
+     */
     @Transactional
     public void updateItems(SystemItemImportRequest request) {
         Instant updateDate = request.getUpdateDate();
@@ -144,6 +149,9 @@ public class ItemService {
         itemUpdateRepo.saveAll(updates);
     }
 
+    /**
+     * Класс для связи элемента и его старого родителя.
+     */
     private static class ItemParentPair {
         SystemItem oldParent;
         SystemItem item;
@@ -154,6 +162,11 @@ public class ItemService {
         }
     }
 
+    /**
+     * Удаление элемента.
+     * @param id идентификатор элемента
+     * @param updateDate дата обновления
+     */
     @Transactional
     public void deleteItem(String id, Instant updateDate) {
         SystemItem item = findById(id);
@@ -164,10 +177,26 @@ public class ItemService {
         }
     }
 
+    /**
+     * Поиск элемента.
+     * @param id идентификатор элемента
+     * @return найденный элемент
+     * @throws ItemNotFoundException
+     */
     private SystemItem findById(String id) {
         return systemItemRepo.findById(id).orElseThrow(ItemNotFoundException::new);
     }
 
+    /**
+     * Обновление родителей при удалении одного элемента.
+     * Их размер уменьшается на размер этого элемента, и устанавливается дата обновления.
+     * @param rootParent первый родитель удаляемого элемента
+     * @param itemSize размер удаляемого элемента
+     * @param updateDate дата обновления
+     * @param newParentsBranch множество новых родителей элемента.
+     *                         Используется, чтобы не уменьшать их размер,
+     *                         который будет обновлен во внешнем методе
+     */
     private void updateParents(
             SystemItem rootParent,
             long itemSize,
@@ -190,7 +219,14 @@ public class ItemService {
         systemItemRepo.saveAll(parents);
         itemUpdateRepo.saveAll(updates);
     }
-    
+
+    /**
+     * Рекурсивное вычисление размера элемента.
+     * Используется кэширование с помощью таблицы.
+     * @param item элемент, размер которого требуется установить
+     * @param knownSizes таблица с известными размерами, которая заполняется по мере выполнения метода
+     * @return размер элемента
+     */
     private Long getItemSize(SystemItem item, Map<String, Long> knownSizes) {
         Long size;
 
@@ -217,6 +253,11 @@ public class ItemService {
         return size;
     }
 
+    /**
+     * Получение единственного элемента.
+     * @param id идентификатор элемента
+     * @return объект с информацией об элементе
+     */
     @Transactional
     public ItemResponse getNode(String id) {
         SystemItem rootItem = findById(id);
@@ -225,6 +266,11 @@ public class ItemService {
         return response;
     }
 
+    /**
+     * Рекурсивное заполнение узла дочерними элементами.
+     * @param response текущий элемент
+     * @param itemChildren дети текущего элемента
+     */
     private void setChildren(ItemResponse response, Set<SystemItem> itemChildren) {
         List<ItemResponse> responseChildren = null;
 
@@ -250,6 +296,11 @@ public class ItemService {
         response.setChildren(responseChildren);
     }
 
+    /**
+     * Получение всех файлов, обновленных за последние 24 часа от времени запроса.
+     * @param dateTo конец интервала
+     * @return объект с найденными файлами
+     */
     @Transactional
     public SystemItemHistoryResponse getLastUpdatedFiles(Instant dateTo) {
         Instant dateFrom = dateTo.minus(24, ChronoUnit.HOURS);
@@ -259,6 +310,13 @@ public class ItemService {
         return new SystemItemHistoryResponse(units);
     }
 
+    /**
+     * Получение истории обновлений элемента за заданный полуинтервал [dateStart, dateEnd).
+     * @param id идентификатор элемента
+     * @param dateStart начало интервала для поиска
+     * @param dateEnd конец интервала для поиска
+     * @return объект с найденными обновлениями
+     */
     @Transactional
     public SystemItemHistoryResponse getNodeHistory(String id, Instant dateStart, Instant dateEnd) {
         SystemItem item = findById(id);
