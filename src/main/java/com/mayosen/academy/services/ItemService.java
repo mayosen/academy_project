@@ -42,6 +42,7 @@ public class ItemService {
     public void updateItems(SystemItemImportRequest request) {
         Instant updateDate = request.getUpdateDate();
         int itemsSize = request.getItems().size();
+        // Таблица для быстрого поиска новых родителей из запроса
         Map<String, SystemItem> mappedItems = new HashMap<>(itemsSize);
 
         for (SystemItemImport importItem : request.getItems()) {
@@ -70,7 +71,7 @@ public class ItemService {
             item.setId(importItem.getId());
             item.setUrl(importItem.getUrl());
             item.setDate(updateDate);
-            item.setParentId(importItem.getParentId());
+            item.setNewParentId(importItem.getParentId());
             item.setType(importItem.getType());
             item.setSize(size);
 
@@ -80,17 +81,17 @@ public class ItemService {
         List<ItemParentPair> oldParents = new ArrayList<>();
 
         for (SystemItem item : mappedItems.values()) {
-            String parentId = item.getParentId();
+            String newParentId = item.getNewParentId();
 
-            if (item.getParent() != null && !item.getParent().getId().equals(parentId)) {
+            if (item.getParent() != null && !item.getParent().getId().equals(newParentId)) {
                 oldParents.add(new ItemParentPair(item));
             }
 
-            if (parentId != null) {
-                SystemItem parent = mappedItems.get(parentId);
+            if (newParentId != null) {
+                SystemItem parent = mappedItems.get(newParentId);
 
                 if (parent == null) {
-                    parent = systemItemRepo.findById(parentId)
+                    parent = systemItemRepo.findById(newParentId)
                             .orElseThrow(() -> new ValidationException("Родитель не найден"));
                 }
 
@@ -181,7 +182,7 @@ public class ItemService {
      * Поиск элемента.
      * @param id идентификатор элемента
      * @return найденный элемент
-     * @throws ItemNotFoundException
+     * @throws ItemNotFoundException запрашиваемый элемент не найден
      */
     private SystemItem findById(String id) {
         return systemItemRepo.findById(id).orElseThrow(ItemNotFoundException::new);

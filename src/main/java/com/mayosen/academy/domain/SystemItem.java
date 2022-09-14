@@ -1,5 +1,6 @@
 package com.mayosen.academy.domain;
 
+import com.mayosen.academy.requests.SystemItemImportRequest;
 import lombok.*;
 
 import javax.persistence.*;
@@ -32,9 +33,13 @@ public class SystemItem implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private SystemItem parent;
-    
+
+    /**
+     * Служебное поле для связи элемента и предполагаемого нового родителя.
+     * @see com.mayosen.academy.services.ItemService#updateItems(SystemItemImportRequest) 
+     */
     @Transient
-    private String parentId;
+    private String newParentId;
 
     @Column(name = "type")
     @Enumerated(EnumType.STRING)
