@@ -11,7 +11,6 @@ import com.mayosen.academy.requests.SystemItemImportRequest;
 import com.mayosen.academy.responses.items.ItemResponse;
 import com.mayosen.academy.responses.updates.SystemItemHistoryResponse;
 import com.mayosen.academy.responses.updates.SystemItemHistoryUnit;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +20,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
-@Log4j2
 @Service
 public class ItemService {
     private final SystemItemRepo systemItemRepo;
@@ -46,8 +44,6 @@ public class ItemService {
         Map<String, SystemItem> mappedItems = new HashMap<>(itemsSize);
 
         for (SystemItemImport importItem : request.getItems()) {
-            Long size = importItem.getSize();
-
             SystemItem item = systemItemRepo.findById(importItem.getId()).orElseGet(SystemItem::new);
 
             if (item.getId() != null && importItem.getType() != item.getType()) {
@@ -73,7 +69,7 @@ public class ItemService {
             item.setDate(updateDate);
             item.setNewParentId(importItem.getParentId());
             item.setType(importItem.getType());
-            item.setSize(size);
+            item.setSize(importItem.getSize());
 
             mappedItems.put(item.getId(), item);
         }
@@ -83,6 +79,7 @@ public class ItemService {
         for (SystemItem item : mappedItems.values()) {
             String newParentId = item.getNewParentId();
 
+            // Если есть старый родитель, id которого отличается от обновляемого (включая null)
             if (item.getParent() != null && !item.getParent().getId().equals(newParentId)) {
                 oldParents.add(new ItemParentPair(item));
             }
@@ -104,10 +101,6 @@ public class ItemService {
             }
         }
 
-        Map<String, Long> knownSizes = new HashMap<>(itemsSize);
-        Set<SystemItem> sortedItems = new LinkedHashSet<>(itemsSize);
-        List<ItemUpdate> updates = new ArrayList<>(itemsSize);
-
         for (ItemParentPair pair : oldParents) {
             SystemItem oldParent = pair.oldParent;
             SystemItem item = pair.item;
@@ -123,6 +116,10 @@ public class ItemService {
             updateParents(oldParent, item.getSize(), updateDate, newParentsBranch);
         }
 
+        Map<String, Long> knownSizes = new HashMap<>(itemsSize);
+        Set<SystemItem> sortedItems = new LinkedHashSet<>(itemsSize);
+        List<ItemUpdate> updates = new ArrayList<>(itemsSize);
+
         // Сортировка нужна, чтобы сохранить родителей вперед детей
         for (SystemItem item : mappedItems.values()) {
             Long size;
@@ -131,8 +128,8 @@ public class ItemService {
 
             // Устанавливаем размер новым родителям
             do {
-                size = getItemSize(current, knownSizes);
                 current.setDate(updateDate);
+                size = getItemSize(current, knownSizes);
                 current.setSize(size);
                 childBranch.addFirst(current);
                 current = current.getParent();
@@ -142,7 +139,8 @@ public class ItemService {
         }
 
         for (SystemItem item : sortedItems) {
-            item.getChildren().clear();  // Для корректного сохранения
+            // Дети уже присутствуют среди элементов на сохранение
+            item.getChildren().clear();
             updates.add(new ItemUpdate(item));
         }
 
@@ -240,11 +238,9 @@ public class ItemService {
                 size = 0L;
                 Set<SystemItem> children = item.getChildren();
 
-                if (children != null) {
-                    for (SystemItem child : children) {
-                        Long currentSize = getItemSize(child, knownSizes);
-                        size += currentSize;
-                    }
+                for (SystemItem child : children) {
+                    Long currentSize = getItemSize(child, knownSizes);
+                    size += currentSize;
                 }
 
                 knownSizes.put(item.getId(), size);
