@@ -11,7 +11,6 @@ import com.mayosen.academy.requests.SystemItemImportRequest;
 import com.mayosen.academy.responses.items.ItemResponse;
 import com.mayosen.academy.responses.updates.SystemItemHistoryResponse;
 import com.mayosen.academy.responses.updates.SystemItemHistoryUnit;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +20,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
-@Log4j2
 @Service
 public class ItemService {
     private final SystemItemRepo systemItemRepo;
@@ -240,11 +238,9 @@ public class ItemService {
                 size = 0L;
                 Set<SystemItem> children = item.getChildren();
 
-                if (children != null) {
-                    for (SystemItem child : children) {
-                        Long currentSize = getItemSize(child, knownSizes);
-                        size += currentSize;
-                    }
+                for (SystemItem child : children) {
+                    Long currentSize = getItemSize(child, knownSizes);
+                    size += currentSize;
                 }
 
                 knownSizes.put(item.getId(), size);
