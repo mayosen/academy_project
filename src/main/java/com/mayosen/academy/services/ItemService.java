@@ -83,6 +83,7 @@ public class ItemService {
         for (SystemItem item : mappedItems.values()) {
             String newParentId = item.getNewParentId();
 
+            // Если есть старый родитель, id которого отличается от обновляемого (включая null)
             if (item.getParent() != null && !item.getParent().getId().equals(newParentId)) {
                 oldParents.add(new ItemParentPair(item));
             }
