@@ -46,8 +46,6 @@ public class ItemService {
         Map<String, SystemItem> mappedItems = new HashMap<>(itemsSize);
 
         for (SystemItemImport importItem : request.getItems()) {
-            Long size = importItem.getSize();
-
             SystemItem item = systemItemRepo.findById(importItem.getId()).orElseGet(SystemItem::new);
 
             if (item.getId() != null && importItem.getType() != item.getType()) {
@@ -73,7 +71,7 @@ public class ItemService {
             item.setDate(updateDate);
             item.setNewParentId(importItem.getParentId());
             item.setType(importItem.getType());
-            item.setSize(size);
+            item.setSize(importItem.getSize());
 
             mappedItems.put(item.getId(), item);
         }
@@ -105,10 +103,6 @@ public class ItemService {
             }
         }
 
-        Map<String, Long> knownSizes = new HashMap<>(itemsSize);
-        Set<SystemItem> sortedItems = new LinkedHashSet<>(itemsSize);
-        List<ItemUpdate> updates = new ArrayList<>(itemsSize);
-
         for (ItemParentPair pair : oldParents) {
             SystemItem oldParent = pair.oldParent;
             SystemItem item = pair.item;
@@ -124,6 +118,10 @@ public class ItemService {
             updateParents(oldParent, item.getSize(), updateDate, newParentsBranch);
         }
 
+        Map<String, Long> knownSizes = new HashMap<>(itemsSize);
+        Set<SystemItem> sortedItems = new LinkedHashSet<>(itemsSize);
+        List<ItemUpdate> updates = new ArrayList<>(itemsSize);
+
         // Сортировка нужна, чтобы сохранить родителей вперед детей
         for (SystemItem item : mappedItems.values()) {
             Long size;
@@ -132,8 +130,8 @@ public class ItemService {
 
             // Устанавливаем размер новым родителям
             do {
-                size = getItemSize(current, knownSizes);
                 current.setDate(updateDate);
+                size = getItemSize(current, knownSizes);
                 current.setSize(size);
                 childBranch.addFirst(current);
                 current = current.getParent();
