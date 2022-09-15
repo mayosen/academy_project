@@ -141,7 +141,8 @@ public class ItemService {
         }
 
         for (SystemItem item : sortedItems) {
-            item.getChildren().clear();  // Для корректного сохранения
+            // Дети уже присутствуют среди элементов на сохранение
+            item.getChildren().clear();
             updates.add(new ItemUpdate(item));
         }
 
