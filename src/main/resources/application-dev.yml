@@ -1,0 +1,20 @@
+server:
+  error:
+    include-message: always
+
+logging:
+  level:
+    org:
+      springframework:
+        web: DEBUG
+    com:
+      mayosen:
+        academy: DEBUG
+
+spring:
+  jpa:
+    open-in-view: true
+    properties:
+      hibernate:
+        show_sql: true
+        generate_statistics: true
