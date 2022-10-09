@@ -18,7 +18,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up JDK
+      - name: Setup JDK
         uses: actions/setup-java@v3
         with:
           java-version: 17
@@ -38,7 +38,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up JDK
+      - name: Setup JDK
         uses: actions/setup-java@v3
         with:
           java-version: 17
