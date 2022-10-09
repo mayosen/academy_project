@@ -14,6 +14,6 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SystemItemHistoryResponse {
-    private List<SystemItemHistoryUnit> items;
+public class ItemHistoryResponse {
+    private List<ItemHistoryUnit> items;
 }

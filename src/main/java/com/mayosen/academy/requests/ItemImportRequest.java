@@ -1,5 +1,6 @@
 package com.mayosen.academy.requests;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,11 +17,12 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-public class SystemItemImportRequest {
+@AllArgsConstructor
+public class ItemImportRequest {
     @NotNull
     @UniqueElements
     @Valid
-    private List<SystemItemImport> items;
+    private List<ItemImport> items;
 
     @NotNull
     private Instant updateDate;

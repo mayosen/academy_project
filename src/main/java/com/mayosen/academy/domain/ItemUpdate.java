@@ -23,7 +23,7 @@ public class ItemUpdate {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "item_id")
-    private SystemItem item;
+    private Item item;
 
     @Column(name = "url")
     private String url;
@@ -36,12 +36,12 @@ public class ItemUpdate {
 
     @Column(name = "type")
     @Enumerated(EnumType.STRING)
-    private SystemItemType type;
+    private ItemType type;
 
     @Column(name = "size")
     private Long size;
 
-    public ItemUpdate(SystemItem item) {
+    public ItemUpdate(Item item) {
         this.item = item;
         this.url = item.getUrl();
         this.date = item.getDate();

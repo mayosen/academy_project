@@ -3,8 +3,8 @@ package com.mayosen.academy.responses.items;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.mayosen.academy.domain.SystemItem;
-import com.mayosen.academy.domain.SystemItemType;
+import com.mayosen.academy.domain.Item;
+import com.mayosen.academy.domain.ItemType;
 import lombok.*;
 
 import java.time.Instant;
@@ -24,10 +24,10 @@ public class ItemResponse {
 
     private String url;
 
-    private SystemItemType type;
+    private ItemType type;
 
     @JsonIgnore
-    private SystemItem parent;
+    private Item parent;
 
     @JsonProperty("parentId")
     public String getParentId() {
@@ -40,7 +40,7 @@ public class ItemResponse {
 
     private List<ItemResponse> children;
 
-    public ItemResponse(SystemItem item) {
+    public ItemResponse(Item item) {
         id = item.getId();
         url = item.getUrl();
         type = item.getType();
