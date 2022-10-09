@@ -1,6 +1,6 @@
 package com.mayosen.academy.requests;
 
-import com.mayosen.academy.domain.SystemItemType;
+import com.mayosen.academy.domain.ItemType;
 import lombok.*;
 import org.hibernate.validator.constraints.Length;
 
@@ -12,9 +12,10 @@ import javax.validation.constraints.NotNull;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(of = "id")
 @ToString(of = {"id", "type"})
-public class SystemItemImport {
+public class ItemImport {
     @NotNull
     @Length(max = 255)
     private String id;
@@ -26,7 +27,11 @@ public class SystemItemImport {
     private String parentId;
 
     @NotNull
-    private SystemItemType type;
+    private ItemType type;
 
     private Long size;
+
+    public ItemImport(String id) {
+        this.id = id;
+    }
 }

@@ -34,9 +34,6 @@ dependencies {
     implementation 'org.postgresql:postgresql:42.5.0'
     implementation 'org.flywaydb:flyway-core:8.5.13'
 
-    // Swagger
-    implementation 'io.springfox:springfox-boot-starter:3.0.0'
-
     // Development
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 

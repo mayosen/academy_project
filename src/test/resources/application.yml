@@ -1,0 +1,14 @@
+logging:
+  level:
+    org:
+      springframework:
+        web: DEBUG
+    com:
+      mayosen:
+        academy: DEBUG
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/academy_test
+    username: postgres
+    password: postgres

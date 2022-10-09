@@ -1,8 +1,8 @@
 package com.mayosen.academy.responses.updates;
 
 import com.mayosen.academy.domain.ItemUpdate;
-import com.mayosen.academy.domain.SystemItem;
-import com.mayosen.academy.domain.SystemItemType;
+import com.mayosen.academy.domain.Item;
+import com.mayosen.academy.domain.ItemType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,15 +17,15 @@ import java.time.Instant;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SystemItemHistoryUnit {
+public class ItemHistoryUnit {
     private String id;
     private String url;
     private String parentId;
-    private SystemItemType type;
+    private ItemType type;
     private Long size;
     private Instant date;
 
-    public SystemItemHistoryUnit(ItemUpdate update) {
+    public ItemHistoryUnit(ItemUpdate update) {
         id = update.getItem().getId();
         url = update.getUrl();
         parentId = update.getParentId();
@@ -34,7 +34,7 @@ public class SystemItemHistoryUnit {
         date = update.getDate();
     }
 
-    public SystemItemHistoryUnit(SystemItem item) {
+    public ItemHistoryUnit(Item item) {
         id = item.getId();
         url = item.getUrl();
         parentId = item.getParent() != null ? item.getParent().getId() : null;

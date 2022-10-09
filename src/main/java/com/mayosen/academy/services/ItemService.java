@@ -1,16 +1,16 @@
 package com.mayosen.academy.services;
 
 import com.mayosen.academy.domain.ItemUpdate;
-import com.mayosen.academy.domain.SystemItem;
-import com.mayosen.academy.domain.SystemItemType;
+import com.mayosen.academy.domain.Item;
+import com.mayosen.academy.domain.ItemType;
 import com.mayosen.academy.exceptions.ItemNotFoundException;
 import com.mayosen.academy.repos.ItemUpdateRepo;
-import com.mayosen.academy.repos.SystemItemRepo;
-import com.mayosen.academy.requests.SystemItemImport;
-import com.mayosen.academy.requests.SystemItemImportRequest;
+import com.mayosen.academy.repos.ItemRepo;
+import com.mayosen.academy.requests.ItemImport;
+import com.mayosen.academy.requests.ItemImportRequest;
 import com.mayosen.academy.responses.items.ItemResponse;
-import com.mayosen.academy.responses.updates.SystemItemHistoryResponse;
-import com.mayosen.academy.responses.updates.SystemItemHistoryUnit;
+import com.mayosen.academy.responses.updates.ItemHistoryResponse;
+import com.mayosen.academy.responses.updates.ItemHistoryUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,12 +22,12 @@ import java.util.*;
 
 @Service
 public class ItemService {
-    private final SystemItemRepo systemItemRepo;
+    private final ItemRepo itemRepo;
     private final ItemUpdateRepo itemUpdateRepo;
 
     @Autowired
-    public ItemService(SystemItemRepo systemItemRepo, ItemUpdateRepo itemUpdateRepo) {
-        this.systemItemRepo = systemItemRepo;
+    public ItemService(ItemRepo itemRepo, ItemUpdateRepo itemUpdateRepo) {
+        this.itemRepo = itemRepo;
         this.itemUpdateRepo = itemUpdateRepo;
     }
 
@@ -37,20 +37,20 @@ public class ItemService {
      * @throws ValidationException ошибка валидации данных
      */
     @Transactional
-    public void updateItems(SystemItemImportRequest request) {
+    public void updateItems(ItemImportRequest request) {
         Instant updateDate = request.getUpdateDate();
         int itemsSize = request.getItems().size();
         // Таблица для быстрого поиска новых родителей из запроса
-        Map<String, SystemItem> mappedItems = new HashMap<>(itemsSize);
+        Map<String, Item> mappedItems = new HashMap<>(itemsSize);
 
-        for (SystemItemImport importItem : request.getItems()) {
-            SystemItem item = systemItemRepo.findById(importItem.getId()).orElseGet(SystemItem::new);
+        for (ItemImport importItem : request.getItems()) {
+            Item item = itemRepo.findById(importItem.getId()).orElseGet(Item::new);
 
             if (item.getId() != null && importItem.getType() != item.getType()) {
                 throw new ValidationException("Нельзя менять тип элемента");
             }
 
-            if (importItem.getType() == SystemItemType.FOLDER) {
+            if (importItem.getType() == ItemType.FOLDER) {
                 if (importItem.getUrl() != null) {
                     throw new ValidationException("Поле url должно быть пустым у папки");
                 } else if (importItem.getSize() != null) {
@@ -76,7 +76,7 @@ public class ItemService {
 
         List<ItemParentPair> oldParents = new ArrayList<>();
 
-        for (SystemItem item : mappedItems.values()) {
+        for (Item item : mappedItems.values()) {
             String newParentId = item.getNewParentId();
 
             // Если есть старый родитель, id которого отличается от обновляемого (включая null)
@@ -85,14 +85,14 @@ public class ItemService {
             }
 
             if (newParentId != null) {
-                SystemItem parent = mappedItems.get(newParentId);
+                Item parent = mappedItems.get(newParentId);
 
                 if (parent == null) {
-                    parent = systemItemRepo.findById(newParentId)
+                    parent = itemRepo.findById(newParentId)
                             .orElseThrow(() -> new ValidationException("Родитель не найден"));
                 }
 
-                if (parent.getType() != SystemItemType.FOLDER) {
+                if (parent.getType() != ItemType.FOLDER) {
                     throw new ValidationException("Родителем может быть только папка");
                 }
 
@@ -102,11 +102,11 @@ public class ItemService {
         }
 
         for (ItemParentPair pair : oldParents) {
-            SystemItem oldParent = pair.oldParent;
-            SystemItem item = pair.item;
+            Item oldParent = pair.oldParent;
+            Item item = pair.item;
             oldParent.getChildren().remove(item);
-            SystemItem current = item;
-            Set<SystemItem> newParentsBranch = new HashSet<>();
+            Item current = item;
+            Set<Item> newParentsBranch = new HashSet<>();
 
             while (current.getParent() != null) {
                 current = current.getParent();
@@ -117,14 +117,14 @@ public class ItemService {
         }
 
         Map<String, Long> knownSizes = new HashMap<>(itemsSize);
-        Set<SystemItem> sortedItems = new LinkedHashSet<>(itemsSize);
+        Set<Item> sortedItems = new LinkedHashSet<>(itemsSize);
         List<ItemUpdate> updates = new ArrayList<>(itemsSize);
 
         // Сортировка нужна, чтобы сохранить родителей вперед детей
-        for (SystemItem item : mappedItems.values()) {
+        for (Item item : mappedItems.values()) {
             Long size;
-            SystemItem current = item;
-            Deque<SystemItem> childBranch = new LinkedList<>();
+            Item current = item;
+            Deque<Item> childBranch = new LinkedList<>();
 
             // Устанавливаем размер новым родителям
             do {
@@ -138,13 +138,13 @@ public class ItemService {
             sortedItems.addAll(childBranch);
         }
 
-        for (SystemItem item : sortedItems) {
+        for (Item item : sortedItems) {
             // Дети уже присутствуют среди элементов на сохранение
             item.getChildren().clear();
             updates.add(new ItemUpdate(item));
         }
 
-        systemItemRepo.saveAll(sortedItems);
+        itemRepo.saveAll(sortedItems);
         itemUpdateRepo.saveAll(updates);
     }
 
@@ -152,10 +152,10 @@ public class ItemService {
      * Класс для связи элемента и его старого родителя.
      */
     private static class ItemParentPair {
-        SystemItem oldParent;
-        SystemItem item;
+        Item oldParent;
+        Item item;
 
-        public ItemParentPair(SystemItem item) {
+        public ItemParentPair(Item item) {
             this.oldParent = item.getParent();
             this.item = item;
         }
@@ -168,8 +168,8 @@ public class ItemService {
      */
     @Transactional
     public void deleteItem(String id, Instant updateDate) {
-        SystemItem item = findById(id);
-        systemItemRepo.delete(item);
+        Item item = findById(id);
+        itemRepo.delete(item);
 
         if (item.getParent() != null) {
             updateParents(item.getParent(), item.getSize(), updateDate, Collections.emptySet());
@@ -182,8 +182,8 @@ public class ItemService {
      * @return найденный элемент
      * @throws ItemNotFoundException запрашиваемый элемент не найден
      */
-    private SystemItem findById(String id) {
-        return systemItemRepo.findById(id).orElseThrow(ItemNotFoundException::new);
+    private Item findById(String id) {
+        return itemRepo.findById(id).orElseThrow(ItemNotFoundException::new);
     }
 
     /**
@@ -197,13 +197,13 @@ public class ItemService {
      *                         который будет обновлен во внешнем методе
      */
     private void updateParents(
-            SystemItem rootParent,
+            Item rootParent,
             long itemSize,
             Instant updateDate,
-            Set<SystemItem> newParentsBranch
+            Set<Item> newParentsBranch
     ) {
-        SystemItem current = rootParent;
-        List<SystemItem> parents = new ArrayList<>();
+        Item current = rootParent;
+        List<Item> parents = new ArrayList<>();
         List<ItemUpdate> updates = new ArrayList<>();
 
         do {
@@ -215,7 +215,7 @@ public class ItemService {
             // Пока не встретим первого родителя, который будет обновлен в другом методе
         } while (current != null && !newParentsBranch.contains(current));
 
-        systemItemRepo.saveAll(parents);
+        itemRepo.saveAll(parents);
         itemUpdateRepo.saveAll(updates);
     }
 
@@ -226,19 +226,19 @@ public class ItemService {
      * @param knownSizes таблица с известными размерами, которая заполняется по мере выполнения метода
      * @return размер элемента
      */
-    private Long getItemSize(SystemItem item, Map<String, Long> knownSizes) {
+    private Long getItemSize(Item item, Map<String, Long> knownSizes) {
         Long size;
 
-        if (item.getType() == SystemItemType.FILE) {
+        if (item.getType() == ItemType.FILE) {
             size = item.getSize();
         } else {
             size = knownSizes.get(item.getId());
 
             if (size == null) {
                 size = 0L;
-                Set<SystemItem> children = item.getChildren();
+                Set<Item> children = item.getChildren();
 
-                for (SystemItem child : children) {
+                for (Item child : children) {
                     Long currentSize = getItemSize(child, knownSizes);
                     size += currentSize;
                 }
@@ -257,7 +257,7 @@ public class ItemService {
      */
     @Transactional
     public ItemResponse getNode(String id) {
-        SystemItem rootItem = findById(id);
+        Item rootItem = findById(id);
         ItemResponse response = new ItemResponse(rootItem);
         setChildren(response, rootItem.getChildren());
         return response;
@@ -268,18 +268,18 @@ public class ItemService {
      * @param response текущий элемент
      * @param itemChildren дети текущего элемента
      */
-    private void setChildren(ItemResponse response, Set<SystemItem> itemChildren) {
+    private void setChildren(ItemResponse response, Set<Item> itemChildren) {
         List<ItemResponse> responseChildren = null;
 
-        if (response.getType() == SystemItemType.FOLDER) {
+        if (response.getType() == ItemType.FOLDER) {
             responseChildren = new ArrayList<>();
             ItemResponse currentResponse;
 
             if (itemChildren != null) {
-                for (SystemItem item : itemChildren) {
+                for (Item item : itemChildren) {
                     currentResponse = new ItemResponse(item);
 
-                    if (item.getType() == SystemItemType.FILE) {
+                    if (item.getType() == ItemType.FILE) {
                         currentResponse.setChildren(null);
                     } else {
                         setChildren(currentResponse, item.getChildren());
@@ -299,12 +299,12 @@ public class ItemService {
      * @return объект с найденными файлами
      */
     @Transactional
-    public SystemItemHistoryResponse getLastUpdatedFiles(Instant dateTo) {
+    public ItemHistoryResponse getLastUpdatedFiles(Instant dateTo) {
         Instant dateFrom = dateTo.minus(24, ChronoUnit.HOURS);
-        List<SystemItem> items = systemItemRepo.findAllByDateBetweenAndType(dateFrom, dateTo, SystemItemType.FILE);
-        List<SystemItemHistoryUnit> units = items.stream().map(SystemItemHistoryUnit::new).toList();
+        List<Item> items = itemRepo.findAllByDateBetweenAndType(dateFrom, dateTo, ItemType.FILE);
+        List<ItemHistoryUnit> units = items.stream().map(ItemHistoryUnit::new).toList();
 
-        return new SystemItemHistoryResponse(units);
+        return new ItemHistoryResponse(units);
     }
 
     /**
@@ -315,8 +315,8 @@ public class ItemService {
      * @return объект с найденными обновлениями
      */
     @Transactional
-    public SystemItemHistoryResponse getNodeHistory(String id, Instant dateStart, Instant dateEnd) {
-        SystemItem item = findById(id);
+    public ItemHistoryResponse getNodeHistory(String id, Instant dateStart, Instant dateEnd) {
+        Item item = findById(id);
         List<ItemUpdate> updates;
 
         if (dateStart == null && dateEnd == null) {
@@ -329,8 +329,8 @@ public class ItemService {
             updates = itemUpdateRepo.findAllByItemAndDateTo(item, dateEnd);
         }
 
-        List<SystemItemHistoryUnit> units = updates.stream().map(SystemItemHistoryUnit::new).toList();
+        List<ItemHistoryUnit> units = updates.stream().map(ItemHistoryUnit::new).toList();
 
-        return new SystemItemHistoryResponse(units);
+        return new ItemHistoryResponse(units);
     }
 }
