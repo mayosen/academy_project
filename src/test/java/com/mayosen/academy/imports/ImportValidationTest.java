@@ -10,16 +10,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.util.FileCopyUtils;
 
+import java.io.File;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 
-import static com.mayosen.academy.imports.Utils.expectValidationFailed;
-import static com.mayosen.academy.imports.Utils.requestOf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -27,20 +30,43 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class ImportsTest {
+public class ImportValidationTest {
     private final MockMvc mockMvc;
+    private final ResourceLoader resourceLoader;
     private final ObjectMapper objectMapper;
 
     @Autowired
-    public ImportsTest(MockMvc mockMvc) {
+    public ImportValidationTest(MockMvc mockMvc, ResourceLoader resourceLoader) {
         this.mockMvc = mockMvc;
-        objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
+        this.resourceLoader = resourceLoader;
+        this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    }
+
+    private ItemImportRequest requestOf(ItemImport item) {
+        return new ItemImportRequest(List.of(item), Instant.now());
+    }
+
+    private ItemImportRequest requestOf(List<ItemImport> items) {
+        return new ItemImportRequest(items, Instant.now());
     }
 
     private MockHttpServletRequestBuilder postRequest(ItemImportRequest request) throws JsonProcessingException {
         byte[] bytes = objectMapper.writeValueAsBytes(request);
         return post("/imports").contentType(MediaType.APPLICATION_JSON).content(bytes);
+    }
+
+    public MockHttpServletRequestBuilder postRequest(String filename) throws Exception {
+        String path = String.format("classpath:/imports/%s", filename);
+        File file = resourceLoader.getResource(path).getFile();
+        byte[] bytes = FileCopyUtils.copyToByteArray(file);
+        return post("/imports").contentType(MediaType.APPLICATION_JSON).content(bytes);
+    }
+
+    private void expectValidationFailed(ResultActions actions) throws Exception {
+        actions
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.message").value("Validation failed"));
     }
 
     @Test
@@ -100,11 +126,7 @@ public class ImportsTest {
     @Test
     public void notNullFolderSize() throws Exception {
         ItemImport item = new ItemImport("", null, null, ItemType.FOLDER, 40L);
-        mockMvc
-                .perform(postRequest(requestOf(item)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(400))
-                .andExpect(jsonPath("$.message").value("Validation failed"));
+        expectValidationFailed(mockMvc.perform(postRequest(requestOf(item))));
     }
 
     @Test
@@ -130,5 +152,40 @@ public class ImportsTest {
         String url = "longUrl".repeat(100);
         ItemImport item = new ItemImport("", url, null, ItemType.FILE, 40L);
         expectValidationFailed(mockMvc.perform(postRequest(requestOf(item))));
+    }
+
+    @Test
+    @Sql("/truncate.sql")
+    public void fileAsParent() throws Exception {
+        expectValidationFailed(mockMvc.perform(postRequest("fileAsParent.json")));
+    }
+
+    @Test
+    @Sql("/truncate.sql")
+    public void folderAsParent() throws Exception {
+        mockMvc
+                .perform(postRequest("folderAsParent.json"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @Sql("/truncate.sql")
+    public void notExistingParent() throws Exception {
+        ItemImport item = new ItemImport("item", "", "notExistingParent", ItemType.FILE, 40L);
+        expectValidationFailed(mockMvc.perform(postRequest(requestOf(item))));
+    }
+
+    @Test
+    @Sql("/truncate.sql")
+    public void existingParent() throws Exception {
+        ItemImport folder = new ItemImport("folder", null, null, ItemType.FOLDER, null);
+        mockMvc
+                .perform(postRequest(requestOf(folder)))
+                .andExpect(status().isOk());
+
+        ItemImport file = new ItemImport("file", "", "folder", ItemType.FILE, 40L);
+        mockMvc
+                .perform(postRequest(requestOf(file)))
+                .andExpect(status().isOk());
     }
 }

@@ -1,0 +1,1 @@
+TRUNCATE TABLE system_item CASCADE;

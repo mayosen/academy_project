@@ -12,3 +12,15 @@ spring:
     url: jdbc:postgresql://localhost:5432/academy_test
     username: postgres
     password: postgres
+
+  jpa:
+    database: postgresql
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        show_sql: true
+        order_inserts: true
+        jdbc:
+          batch_size: 30
