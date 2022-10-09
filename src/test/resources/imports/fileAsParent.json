@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "id": "child",
+      "url": null,
+      "parentId": "parent",
+      "size": null,
+      "type": "FOLDER"
+    },
+    {
+      "id": "parent",
+      "url": "url",
+      "parentId": null,
+      "size": 1000,
+      "type": "FILE"
+    }
+  ],
+  "updateDate": "2022-09-12T20:00:00.000Z"
+}

@@ -1,8 +1,8 @@
 package com.mayosen.academy.controllers;
 
-import com.mayosen.academy.requests.SystemItemImportRequest;
+import com.mayosen.academy.requests.ItemImportRequest;
 import com.mayosen.academy.responses.items.ItemResponse;
-import com.mayosen.academy.responses.updates.SystemItemHistoryResponse;
+import com.mayosen.academy.responses.updates.ItemHistoryResponse;
 import com.mayosen.academy.services.ItemService;
 import com.mayosen.academy.utils.PathUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +22,7 @@ public class MainController {
     }
 
     @PostMapping("/imports")
-    public void updateItems(@Valid @RequestBody SystemItemImportRequest request) {
+    public void updateItems(@Valid @RequestBody ItemImportRequest request) {
         itemService.updateItems(request);
     }
 
@@ -39,12 +39,12 @@ public class MainController {
     }
 
     @GetMapping("/updates")
-    public ResponseEntity<SystemItemHistoryResponse> getLastUpdatedFiles(@RequestParam Instant date) {
+    public ResponseEntity<ItemHistoryResponse> getLastUpdatedFiles(@RequestParam Instant date) {
         return ResponseEntity.ok(itemService.getLastUpdatedFiles(date));
     }
 
     @GetMapping({"/node/{id}/history", "/node//history"})
-    public ResponseEntity<SystemItemHistoryResponse> getNodeHistory(
+    public ResponseEntity<ItemHistoryResponse> getNodeHistory(
             @PathVariable(required = false) String id,
             @RequestParam(required = false) Instant dateStart,
             @RequestParam(required = false) Instant dateEnd

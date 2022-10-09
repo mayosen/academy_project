@@ -1,6 +1,6 @@
 package com.mayosen.academy.domain;
 
-import com.mayosen.academy.requests.SystemItemImportRequest;
+import com.mayosen.academy.requests.ItemImportRequest;
 import lombok.*;
 
 import javax.persistence.*;
@@ -19,7 +19,7 @@ import java.util.Set;
 @NoArgsConstructor
 @EqualsAndHashCode(of = "id")
 @ToString(of = {"id", "type", "size"})
-public class SystemItem implements Serializable {
+public class Item implements Serializable {
     @Id
     @Column(name = "item_id")
     private String id;
@@ -32,22 +32,22 @@ public class SystemItem implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
-    private SystemItem parent;
+    private Item parent;
 
     /**
      * Служебное поле для связи элемента и предполагаемого нового родителя.
-     * @see com.mayosen.academy.services.ItemService#updateItems(SystemItemImportRequest) 
+     * @see com.mayosen.academy.services.ItemService#updateItems(ItemImportRequest)
      */
     @Transient
     private String newParentId;
 
     @Column(name = "type")
     @Enumerated(EnumType.STRING)
-    private SystemItemType type;
+    private ItemType type;
 
     @Column(name = "size")
     private Long size;
 
     @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
-    private Set<SystemItem> children = new LinkedHashSet<>();
+    private Set<Item> children = new LinkedHashSet<>();
 }
