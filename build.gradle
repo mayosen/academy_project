@@ -20,8 +20,8 @@ repositories {
 
 dependencies {
     // Lombok
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
+    compileOnly 'org.projectlombok:lombok:1.18.24'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
 
     // Web
     implementation 'org.springframework.boot:spring-boot-starter-web:2.7.3'
@@ -35,11 +35,10 @@ dependencies {
     implementation 'org.flywaydb:flyway-core:8.5.13'
 
     // Development
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools:2.7.3'
 
     // Tests
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-
+    testImplementation 'org.springframework.boot:spring-boot-starter-test:2.7.3'
 }
 
 tasks.named('test') {
