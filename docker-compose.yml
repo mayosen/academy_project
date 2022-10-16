@@ -4,16 +4,15 @@ services:
   backend:
     container_name: academy_project
     build: .
-    command: gradlew clean bootJar
-    restart: always
+    restart: unless-stopped
     ports:
       - "80:80"
     depends_on:
       - postgresql
     environment:
-      DB_URL: "postgresql://postgresql:5432/academy_db"
-      DB_USERNAME: "${DB_USERNAME}"
-      DB_PASSWORD: "${DB_PASSWORD}"
+      DB_URL: postgresql://postgresql:5432/academy_db
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
     volumes:
       - pg_volume:/var/lib/postgresql/data
 
@@ -24,9 +23,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: "academy_db"
-      POSTGRES_USER: "${DB_USERNAME}"
-      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: academy_db
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
 
 volumes:
   pg_volume: {}
