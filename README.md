@@ -32,12 +32,7 @@ $ gradle clean bootRun
 1. Установить переменные окружения или же использовать `.env` файл ([пример](/.env.example)), 
 который будет передан в Docker Compose.
 
-2. Собрать проект.
-```bash
-$ gradle clean bootJar
-```
-
-3. Запустить контейнер.
+2. Запустить контейнер.
 ```bash
 $ docker-compose up -d
 ```

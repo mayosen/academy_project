@@ -28,7 +28,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
 
       - name: Build
-        run: gradle clean build -x test
+        run: gradle clean build -x test --no-daemon
 
   test:
     name: Test
@@ -57,4 +57,4 @@ jobs:
           distribution: temurin
 
       - name: Run tests
-        run: gradle test
+        run: gradle test --no-daemon
