@@ -1,5 +1,11 @@
 package com.mayosen.academy.nodes;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.mayosen.academy.domain.ItemType;
+import com.mayosen.academy.requests.ItemImport;
+import com.mayosen.academy.requests.ItemImportRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -12,7 +18,9 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.util.FileCopyUtils;
 
 import java.io.File;
+import java.time.Instant;
 
+import static com.mayosen.academy.imports.Utils.requestOf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -21,11 +29,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class NodesTest {
     private final MockMvc mockMvc;
     private final ResourceLoader resourceLoader;
+    private final ObjectMapper objectMapper;
 
     @Autowired
     public NodesTest(MockMvc mockMvc, ResourceLoader resourceLoader) {
         this.mockMvc = mockMvc;
         this.resourceLoader = resourceLoader;
+        this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    }
+
+    private MockHttpServletRequestBuilder postRequest(ItemImportRequest request) throws JsonProcessingException {
+        byte[] bytes = objectMapper.writeValueAsBytes(request);
+        return post("/imports").contentType(MediaType.APPLICATION_JSON).content(bytes);
     }
 
     private MockHttpServletRequestBuilder postRequest(String filename) throws Exception {
@@ -48,9 +63,7 @@ class NodesTest {
     @Test
     @Sql("/truncate.sql")
     void sizes() throws Exception {
-        mockMvc
-                .perform(postRequest("group.json"))
-                .andExpect(status().isOk());
+        mockMvc.perform(postRequest("group.json")).andExpect(status().isOk());
 
         mockMvc.perform(get("/nodes/a")).andExpect(jsonPath("$.size").value(410));
         mockMvc.perform(get("/nodes/f4")).andExpect(jsonPath("$.size").value(40));
@@ -66,5 +79,72 @@ class NodesTest {
         mockMvc.perform(get("/nodes/f2")).andExpect(jsonPath("$.size").value(60));
         mockMvc.perform(get("/nodes/c2")).andExpect(jsonPath("$.size").value(100));
         mockMvc.perform(get("/nodes/f3")).andExpect(jsonPath("$.size").value(100));
+    }
+
+    @Test
+    @Sql({"/truncate.sql", "/fillWithGroup.sql"})
+    void moveFileToRoot() throws Exception {
+        ItemImport item = new ItemImport("f3", "f3-url", null, ItemType.FILE, 100L);
+        String updateDate = "2022-10-10T12:00:00.000Z";
+        mockMvc.perform(postRequest(requestOf(item, Instant.parse(updateDate)))).andExpect(status().isOk());
+
+        mockMvc
+                .perform(get("/nodes/c2"))
+                .andExpect(jsonPath("$.size").value(0))
+                .andExpect(jsonPath("$.date").value(updateDate));
+        mockMvc
+                .perform(get("/nodes/b1"))
+                .andExpect(jsonPath("$.size").value(110))
+                .andExpect(jsonPath("$.date").value(updateDate));
+        mockMvc
+                .perform(get("/nodes/a"))
+                .andExpect(jsonPath("$.size").value(310))
+                .andExpect(jsonPath("$.date").value(updateDate));
+    }
+
+    @Test
+    @Sql({"/truncate.sql", "/fillWithGroup.sql"})
+    void moveFileToOtherFolder() throws Exception {
+        ItemImport item = new ItemImport("f3", "f3-url", "b3", ItemType.FILE, 100L);
+        String updateDate = "2022-10-10T12:00:00.000Z";
+        mockMvc.perform(postRequest(requestOf(item, Instant.parse(updateDate)))).andExpect(status().isOk());
+
+        mockMvc
+                .perform(get("/nodes/c2"))
+                .andExpect(jsonPath("$.size").value(0))
+                .andExpect(jsonPath("$.date").value(updateDate));
+        mockMvc
+                .perform(get("/nodes/b1"))
+                .andExpect(jsonPath("$.size").value(110))
+                .andExpect(jsonPath("$.date").value(updateDate));
+        mockMvc
+                .perform(get("/nodes/b3"))
+                .andExpect(jsonPath("$.size").value(300))
+                .andExpect(jsonPath("$.date").value(updateDate));
+        mockMvc
+                .perform(get("/nodes/a"))
+                .andExpect(jsonPath("$.size").value(410))
+                .andExpect(jsonPath("$.date").value(updateDate));
+    }
+
+    @Test
+    @Sql({"/truncate.sql", "/fillWithGroup.sql"})
+    void moveFolderToOtherFolder() throws Exception {
+        ItemImport item = new ItemImport("b1", null, "b3", ItemType.FOLDER, null);
+        String updateDate = "2022-10-10T12:00:00.000Z";
+        mockMvc.perform(postRequest(requestOf(item, Instant.parse(updateDate)))).andExpect(status().isOk());
+
+        mockMvc
+                .perform(get("/nodes/b1"))
+                .andExpect(jsonPath("$.size").value(210))
+                .andExpect(jsonPath("$.date").value(updateDate));
+        mockMvc
+                .perform(get("/nodes/b3"))
+                .andExpect(jsonPath("$.size").value(410))
+                .andExpect(jsonPath("$.date").value(updateDate));
+        mockMvc
+                .perform(get("/nodes/a"))
+                .andExpect(jsonPath("$.size").value(410))
+                .andExpect(jsonPath("$.date").value(updateDate));
     }
 }
