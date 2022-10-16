@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class ImportValidationTest {
+class ImportValidationTest {
     private final MockMvc mockMvc;
     private final ResourceLoader resourceLoader;
     private final ObjectMapper objectMapper;
@@ -55,7 +55,7 @@ public class ImportValidationTest {
         return post("/imports").contentType(MediaType.APPLICATION_JSON).content(bytes);
     }
 
-    public MockHttpServletRequestBuilder postRequest(String filename) throws Exception {
+    private MockHttpServletRequestBuilder postRequest(String filename) throws Exception {
         String path = String.format("classpath:/imports/%s", filename);
         File file = resourceLoader.getResource(path).getFile();
         byte[] bytes = FileCopyUtils.copyToByteArray(file);
@@ -70,12 +70,12 @@ public class ImportValidationTest {
     }
 
     @Test
-    public void emptyRequest() throws Exception {
+    void emptyRequest() throws Exception {
         expectValidationFailed(mockMvc.perform(post("/imports")));
     }
 
     @Test
-    public void nullUpdateDate() throws Exception {
+    void nullUpdateDate() throws Exception {
         ItemImportRequest request = new ItemImportRequest(Collections.emptyList(), null);
         byte[] bytes = objectMapper.writeValueAsBytes(request);
         expectValidationFailed(mockMvc
@@ -83,19 +83,19 @@ public class ImportValidationTest {
     }
 
     @Test
-    public void nullItemsList() throws Exception {
+    void nullItemsList() throws Exception {
         ItemImportRequest request = new ItemImportRequest(null, Instant.now());
         expectValidationFailed(mockMvc.perform(postRequest(request)));
     }
 
     @Test
-    public void nullItemId() throws Exception {
+    void nullItemId() throws Exception {
         ItemImport item = new ItemImport();
         expectValidationFailed(mockMvc.perform(postRequest(requestOf(item))));
     }
 
     @Test
-    public void blankItemId() throws Exception {
+    void blankItemId() throws Exception {
         ItemImport item = new ItemImport("", "", null, ItemType.FILE, 40L);
         mockMvc
                 .perform(postRequest(requestOf(item)))
@@ -103,7 +103,7 @@ public class ImportValidationTest {
     }
 
     @Test
-    public void notUniqueItems() throws Exception {
+    void notUniqueItems() throws Exception {
         List<ItemImport> items = List.of(
                 new ItemImport("", "", null, ItemType.FILE, 40L),
                 new ItemImport("", "", null, ItemType.FILE, 40L)
@@ -112,57 +112,65 @@ public class ImportValidationTest {
     }
 
     @Test
-    public void notNullFolderUrl() throws Exception {
+    void notNullFolderUrl() throws Exception {
         ItemImport item = new ItemImport("", "url", null, ItemType.FOLDER, null);
         expectValidationFailed(mockMvc.perform(postRequest(requestOf(item))));
     }
 
     @Test
-    public void nullFileUrl() throws Exception {
+    void nullFileUrl() throws Exception {
         ItemImport item = new ItemImport("", null, null, ItemType.FILE, 40L);
         expectValidationFailed(mockMvc.perform(postRequest(requestOf(item))));
     }
 
     @Test
-    public void notNullFolderSize() throws Exception {
+    void notNullFolderSize() throws Exception {
         ItemImport item = new ItemImport("", null, null, ItemType.FOLDER, 40L);
         expectValidationFailed(mockMvc.perform(postRequest(requestOf(item))));
     }
 
     @Test
-    public void nullFileSize() throws Exception {
+    void nullFileSize() throws Exception {
         ItemImport item = new ItemImport("", "", null, ItemType.FOLDER, null);
         expectValidationFailed(mockMvc.perform(postRequest(requestOf(item))));
     }
 
     @Test
-    public void zeroFileSize() throws Exception {
+    void zeroFileSize() throws Exception {
         ItemImport item = new ItemImport("", "", null, ItemType.FILE, 0L);
         expectValidationFailed(mockMvc.perform(postRequest(requestOf(item))));
     }
 
     @Test
-    public void negativeFileSize() throws Exception {
+    void negativeFileSize() throws Exception {
         ItemImport item = new ItemImport("", "", null, ItemType.FILE, -40L);
         expectValidationFailed(mockMvc.perform(postRequest(requestOf(item))));
     }
 
     @Test
-    public void tooLongFileUrl() throws Exception {
+    void tooLongFileUrl() throws Exception {
         String url = "longUrl".repeat(100);
         ItemImport item = new ItemImport("", url, null, ItemType.FILE, 40L);
         expectValidationFailed(mockMvc.perform(postRequest(requestOf(item))));
     }
 
     @Test
+    void nullParent() throws Exception {
+        ItemImport item = new ItemImport("id", null, null, ItemType.FOLDER, null);
+        mockMvc
+                .perform(postRequest(requestOf(item)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @Sql("/truncate.sql")
-    public void fileAsParent() throws Exception {
+    void fileAsParent() throws Exception {
         expectValidationFailed(mockMvc.perform(postRequest("fileAsParent.json")));
     }
 
     @Test
     @Sql("/truncate.sql")
-    public void folderAsParent() throws Exception {
+    void folderAsParent() throws Exception {
         mockMvc
                 .perform(postRequest("folderAsParent.json"))
                 .andExpect(status().isOk());
@@ -170,14 +178,14 @@ public class ImportValidationTest {
 
     @Test
     @Sql("/truncate.sql")
-    public void notExistingParent() throws Exception {
+    void notExistingParent() throws Exception {
         ItemImport item = new ItemImport("item", "", "notExistingParent", ItemType.FILE, 40L);
         expectValidationFailed(mockMvc.perform(postRequest(requestOf(item))));
     }
 
     @Test
     @Sql("/truncate.sql")
-    public void existingParent() throws Exception {
+    void existingParent() throws Exception {
         ItemImport folder = new ItemImport("folder", null, null, ItemType.FOLDER, null);
         mockMvc
                 .perform(postRequest(requestOf(folder)))

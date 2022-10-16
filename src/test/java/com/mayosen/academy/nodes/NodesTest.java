@@ -11,7 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class NodesTest {
+class NodesTest {
     private final MockMvc mockMvc;
 
     @Autowired
@@ -21,7 +21,7 @@ public class NodesTest {
 
     @Test
     @Sql("/truncate.sql")
-    public void notFound() throws Exception {
+    void notFound() throws Exception {
         mockMvc
                 .perform(get("/nodes"))
                 .andExpect(status().isNotFound())
