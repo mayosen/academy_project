@@ -1,11 +1,7 @@
 package com.mayosen.academy;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mayosen.academy.domain.ItemType;
 import com.mayosen.academy.requests.ItemImport;
-import com.mayosen.academy.requests.ItemImportRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -21,30 +17,27 @@ import java.io.File;
 import java.time.Instant;
 import java.util.List;
 
+import static com.mayosen.academy.Utils.postRequest;
 import static com.mayosen.academy.Utils.requestOf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.hamcrest.Matchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 class NodesTest {
     private final MockMvc mockMvc;
     private final ResourceLoader resourceLoader;
-    private final ObjectMapper objectMapper;
 
     @Autowired
     public NodesTest(MockMvc mockMvc, ResourceLoader resourceLoader) {
         this.mockMvc = mockMvc;
         this.resourceLoader = resourceLoader;
-        this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     }
 
-    private MockHttpServletRequestBuilder postRequest(ItemImportRequest request) throws JsonProcessingException {
-        byte[] bytes = objectMapper.writeValueAsBytes(request);
-        return post("/imports").contentType(MediaType.APPLICATION_JSON).content(bytes);
-    }
-
-    private MockHttpServletRequestBuilder postRequest(String filename) throws Exception {
+    private MockHttpServletRequestBuilder postFileRequest(String filename) throws Exception {
         String path = String.format("classpath:data%s", filename);
         File file = resourceLoader.getResource(path).getFile();
         byte[] bytes = FileCopyUtils.copyToByteArray(file);
@@ -132,7 +125,7 @@ class NodesTest {
     @Test
     @Sql("/truncate.sql")
     void sizes() throws Exception {
-        mockMvc.perform(postRequest("/group.json")).andExpect(status().isOk());
+        mockMvc.perform(postFileRequest("/group.json")).andExpect(status().isOk());
 
         mockMvc.perform(get("/nodes/a")).andExpect(jsonPath("$.size").value(410));
         mockMvc.perform(get("/nodes/f4")).andExpect(jsonPath("$.size").value(40));
@@ -215,5 +208,45 @@ class NodesTest {
                 .perform(get("/nodes/a"))
                 .andExpect(jsonPath("$.size").value(410))
                 .andExpect(jsonPath("$.date").value(updateDate));
+    }
+
+    @Test
+    @Sql({"/truncate.sql", "/fillWithGroup.sql"})
+    void childrenTest() throws Exception {
+        mockMvc.perform(get("/nodes/f1")).andExpect(jsonPath("$.children").doesNotExist());
+        mockMvc.perform(get("/nodes/f2")).andExpect(jsonPath("$.children").doesNotExist());
+        mockMvc.perform(get("/nodes/f3")).andExpect(jsonPath("$.children").doesNotExist());
+        mockMvc.perform(get("/nodes/f4")).andExpect(jsonPath("$.children").doesNotExist());
+        mockMvc.perform(get("/nodes/f6")).andExpect(jsonPath("$.children").doesNotExist());
+
+        mockMvc
+                .perform(get("/nodes/c1"))
+                .andExpect(jsonPath("$.children").isArray())
+                .andExpect(jsonPath("$.children", hasSize(1)))
+                .andExpect(jsonPath("$.children[0].id", is("f6")));
+        mockMvc
+                .perform(get("/nodes/c2"))
+                .andExpect(jsonPath("$.children").isArray())
+                .andExpect(jsonPath("$.children", hasSize(1)))
+                .andExpect(jsonPath("$.children[0].id", is("f3")));
+        mockMvc
+                .perform(get("/nodes/b2"))
+                .andExpect(jsonPath("$.children").isArray())
+                .andExpect(jsonPath("$.children", hasSize(0)));
+        mockMvc
+                .perform(get("/nodes/b3"))
+                .andExpect(jsonPath("$.children").isArray())
+                .andExpect(jsonPath("$.children", hasSize(1)))
+                .andExpect(jsonPath("$.children[0].id", is("c1")));
+        mockMvc
+                .perform(get("/nodes/b1"))
+                .andExpect(jsonPath("$.children").isArray())
+                .andExpect(jsonPath("$.children", hasSize(3)))
+                .andExpect(jsonPath("$.children[*].id", containsInAnyOrder("c2", "f1", "f2")));
+        mockMvc
+                .perform(get("/nodes/a"))
+                .andExpect(jsonPath("$.children").isArray())
+                .andExpect(jsonPath("$.children", hasSize(3)))
+                .andExpect(jsonPath("$.children[*].id", containsInAnyOrder("b1", "b2", "b3")));
     }
 }

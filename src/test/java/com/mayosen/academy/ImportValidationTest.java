@@ -1,8 +1,5 @@
 package com.mayosen.academy;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mayosen.academy.domain.ItemType;
 import com.mayosen.academy.requests.ItemImport;
 import com.mayosen.academy.requests.ItemImportRequest;
@@ -10,16 +7,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 
+import static com.mayosen.academy.Utils.postRequest;
 import static com.mayosen.academy.Utils.requestOf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -28,18 +24,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 class ImportValidationTest {
-    private final MockMvc mockMvc;
-    private final ObjectMapper objectMapper;
+    private MockMvc mockMvc;
 
     @Autowired
     public ImportValidationTest(MockMvc mockMvc) {
         this.mockMvc = mockMvc;
-        this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-    }
-
-    private MockHttpServletRequestBuilder postRequest(ItemImportRequest request) throws JsonProcessingException {
-        byte[] bytes = objectMapper.writeValueAsBytes(request);
-        return post("/imports").contentType(MediaType.APPLICATION_JSON).content(bytes);
     }
 
     private void expectValidationFailed(ResultActions actions) throws Exception {
