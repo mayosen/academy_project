@@ -10,6 +10,9 @@ logging:
       mayosen:
         academy: WARN
 
+  file:
+    path: ./logs
+
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
