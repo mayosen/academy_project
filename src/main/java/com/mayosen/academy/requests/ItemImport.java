@@ -7,7 +7,7 @@ import org.hibernate.validator.constraints.Length;
 import javax.validation.constraints.NotNull;
 
 /**
- * Запрос с информацией о добавляемом/обновляемом элементе.
+ * Запрос на добавление/изменение объекта.
  */
 @Getter
 @Setter
@@ -30,8 +30,4 @@ public class ItemImport {
     private ItemType type;
 
     private Long size;
-
-    public ItemImport(String id) {
-        this.id = id;
-    }
 }

@@ -23,10 +23,10 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 
+import static com.mayosen.academy.imports.Utils.requestOf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -40,14 +40,6 @@ class ImportValidationTest {
         this.mockMvc = mockMvc;
         this.resourceLoader = resourceLoader;
         this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-    }
-
-    private ItemImportRequest requestOf(ItemImport item) {
-        return new ItemImportRequest(List.of(item), Instant.now());
-    }
-
-    private ItemImportRequest requestOf(List<ItemImport> items) {
-        return new ItemImportRequest(items, Instant.now());
     }
 
     private MockHttpServletRequestBuilder postRequest(ItemImportRequest request) throws JsonProcessingException {
@@ -77,9 +69,7 @@ class ImportValidationTest {
     @Test
     void nullUpdateDate() throws Exception {
         ItemImportRequest request = new ItemImportRequest(Collections.emptyList(), null);
-        byte[] bytes = objectMapper.writeValueAsBytes(request);
-        expectValidationFailed(mockMvc
-                .perform(post("/imports").contentType(MediaType.APPLICATION_JSON).content(bytes)));
+        expectValidationFailed(mockMvc.perform(postRequest(request)));
     }
 
     @Test
