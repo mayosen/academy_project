@@ -45,7 +45,7 @@ class NodesTest {
     }
 
     private MockHttpServletRequestBuilder postRequest(String filename) throws Exception {
-        String path = String.format("classpath:/imports/%s", filename);
+        String path = String.format("classpath:data%s", filename);
         File file = resourceLoader.getResource(path).getFile();
         byte[] bytes = FileCopyUtils.copyToByteArray(file);
         return post("/imports").contentType(MediaType.APPLICATION_JSON).content(bytes);
@@ -115,7 +115,7 @@ class NodesTest {
     @Test
     @Sql("/truncate.sql")
     void sizes() throws Exception {
-        mockMvc.perform(postRequest("group.json")).andExpect(status().isOk());
+        mockMvc.perform(postRequest("/group.json")).andExpect(status().isOk());
 
         mockMvc.perform(get("/nodes/a")).andExpect(jsonPath("$.size").value(410));
         mockMvc.perform(get("/nodes/f4")).andExpect(jsonPath("$.size").value(40));
