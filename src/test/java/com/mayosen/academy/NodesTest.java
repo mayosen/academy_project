@@ -114,6 +114,23 @@ class NodesTest {
 
     @Test
     @Sql("/truncate.sql")
+    void getItemWithBlankId() throws Exception {
+        ItemImport item = new ItemImport("", "", null, ItemType.FILE, 100L);
+        mockMvc.perform(postRequest(requestOf(item))).andExpect(status().isOk());
+
+        mockMvc
+                .perform(get("/nodes"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(""))
+                .andExpect(jsonPath("$.url").value(""))
+                .andExpect(jsonPath("$.type").value("FILE"))
+                .andExpect(jsonPath("$.parentId").doesNotExist())
+                .andExpect(jsonPath("$.size").value(100))
+                .andExpect(jsonPath("$.children").doesNotExist());
+    }
+
+    @Test
+    @Sql("/truncate.sql")
     void sizes() throws Exception {
         mockMvc.perform(postRequest("/group.json")).andExpect(status().isOk());
 
