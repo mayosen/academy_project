@@ -13,6 +13,7 @@ services:
       DB_URL: postgresql://postgresql:5432/academy_db
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
     volumes:
       - pg_volume:/var/lib/postgresql/data
 
