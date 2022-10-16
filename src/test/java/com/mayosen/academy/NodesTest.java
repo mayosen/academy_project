@@ -1,4 +1,4 @@
-package com.mayosen.academy.nodes;
+package com.mayosen.academy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,8 +19,9 @@ import org.springframework.util.FileCopyUtils;
 
 import java.io.File;
 import java.time.Instant;
+import java.util.List;
 
-import static com.mayosen.academy.imports.Utils.requestOf;
+import static com.mayosen.academy.Utils.requestOf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -48,6 +49,57 @@ class NodesTest {
         File file = resourceLoader.getResource(path).getFile();
         byte[] bytes = FileCopyUtils.copyToByteArray(file);
         return post("/imports").contentType(MediaType.APPLICATION_JSON).content(bytes);
+    }
+
+    @Test
+    @Sql("/truncate.sql")
+    void updateDateWithoutContentChanges() throws Exception {
+        List<ItemImport> items = List.of(
+                new ItemImport("parent", null, null, ItemType.FOLDER, null),
+                new ItemImport("child", null, "parent", ItemType.FOLDER, null)
+        );
+
+        mockMvc
+                .perform(postRequest(requestOf(items, Instant.parse("2022-10-10T00:00:00Z"))))
+                .andExpect(status().isOk());
+        // Заодно проверка того, что дата возвращается всегда с точностью до миллисекунд
+        mockMvc
+                .perform(get("/nodes/parent"))
+                .andExpect(jsonPath("$.date").value("2022-10-10T00:00:00.000Z"));
+        mockMvc
+                .perform(get("/nodes/child"))
+                .andExpect(jsonPath("$.date").value("2022-10-10T00:00:00.000Z"));
+
+        mockMvc
+                .perform(postRequest(requestOf(items, Instant.parse("2022-10-15T00:00:00Z"))))
+                .andExpect(status().isOk());
+        mockMvc
+                .perform(get("/nodes/parent"))
+                .andExpect(jsonPath("$.date").value("2022-10-15T00:00:00.000Z"));
+        mockMvc
+                .perform(get("/nodes/child"))
+                .andExpect(jsonPath("$.date").value("2022-10-15T00:00:00.000Z"));
+    }
+
+    @Test
+    @Sql("/truncate.sql")
+    void updateParentDate() throws Exception {
+        ItemImport parent = new ItemImport("parent", null, null, ItemType.FOLDER, null);
+        ItemImport child = new ItemImport("child", null, "parent", ItemType.FOLDER, null);
+
+        mockMvc
+                .perform(postRequest(requestOf(List.of(parent, child), Instant.parse("2022-10-10T00:00:00.000Z"))))
+                .andExpect(status().isOk());
+        mockMvc
+                .perform(postRequest(requestOf(child, Instant.parse("2022-10-15T00:00:00.000Z"))))
+                .andExpect(status().isOk());
+
+        mockMvc
+                .perform(get("/nodes/parent"))
+                .andExpect(jsonPath("$.date").value("2022-10-15T00:00:00.000Z"));
+        mockMvc
+                .perform(get("/nodes/parent"))
+                .andExpect(jsonPath("$.date").value("2022-10-15T00:00:00.000Z"));
     }
 
     @Test

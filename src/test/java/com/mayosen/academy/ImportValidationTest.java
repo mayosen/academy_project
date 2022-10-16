@@ -1,4 +1,4 @@
-package com.mayosen.academy.imports;
+package com.mayosen.academy;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,7 +23,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 
-import static com.mayosen.academy.imports.Utils.requestOf;
+import static com.mayosen.academy.Utils.requestOf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;

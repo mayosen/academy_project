@@ -1,4 +1,4 @@
-package com.mayosen.academy.imports;
+package com.mayosen.academy;
 
 import com.mayosen.academy.requests.ItemImport;
 import com.mayosen.academy.requests.ItemImportRequest;
