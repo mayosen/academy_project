@@ -52,7 +52,6 @@ class ImportCorrectnessTest {
         mockMvc
                 .perform(postRequest(requestOf(items, Instant.parse("2022-10-10T00:00:00Z"))))
                 .andExpect(status().isOk());
-
         // Заодно проверка того, что дата возвращается всегда с точностью до миллисекунд
         mockMvc
                 .perform(get("/nodes/parent"))
@@ -69,6 +68,27 @@ class ImportCorrectnessTest {
                 .andExpect(jsonPath("$.date").value("2022-10-15T00:00:00.000Z"));
         mockMvc
                 .perform(get("/nodes/child"))
+                .andExpect(jsonPath("$.date").value("2022-10-15T00:00:00.000Z"));
+    }
+
+    @Test
+    @Sql("/truncate.sql")
+    void updateParentDate() throws Exception {
+        ItemImport parent = new ItemImport("parent", null, null, ItemType.FOLDER, null);
+        ItemImport child = new ItemImport("child", null, "parent", ItemType.FOLDER, null);
+
+        mockMvc
+                .perform(postRequest(requestOf(List.of(parent, child), Instant.parse("2022-10-10T00:00:00.000Z"))))
+                .andExpect(status().isOk());
+        mockMvc
+                .perform(postRequest(requestOf(child, Instant.parse("2022-10-15T00:00:00.000Z"))))
+                .andExpect(status().isOk());
+
+        mockMvc
+                .perform(get("/nodes/parent"))
+                .andExpect(jsonPath("$.date").value("2022-10-15T00:00:00.000Z"));
+        mockMvc
+                .perform(get("/nodes/parent"))
                 .andExpect(jsonPath("$.date").value("2022-10-15T00:00:00.000Z"));
     }
 }
