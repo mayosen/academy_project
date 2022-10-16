@@ -9,4 +9,5 @@ INSERT INTO system_item(item_id, url, date, parent_id, type, size) VALUES ('f2',
 
 INSERT INTO system_item(item_id, url, date, parent_id, type, size) VALUES ('b2', null, '2022-09-11 12:00:00.000000 +00:00', 'a', 'FOLDER', 0);
 INSERT INTO system_item(item_id, url, date, parent_id, type, size) VALUES ('b3', null, '2022-09-11 12:00:00.000000 +00:00', 'a', 'FOLDER', 200);
-INSERT INTO system_item(item_id, url, date, parent_id, type, size) VALUES ('c1', null, '2022-09-11 12:00:00.000000 +00:00', 'b3', 'FOLDER', 200);
+INSERT INTO system_item(item_id, url, date, parent_id, type, size) VALUES ('c1', null, '2022-09-11 12:00:00.000000 +00:00', 'b3', 'FOLDER', 0);
+INSERT INTO system_item(item_id, url, date, parent_id, type, size) VALUES ('f6', 'f6-url', '2022-09-11 12:00:00.000000 +00:00', 'c1', 'FILE', 200);
