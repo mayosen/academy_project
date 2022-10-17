@@ -102,7 +102,7 @@ class NodesTest {
     @Sql("/truncate.sql")
     void notFound() throws Exception {
         mockMvc
-                .perform(get("/nodes"))
+                .perform(get("/nodes/"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value(404))
                 .andExpect(jsonPath("$.message").value("Item not found"));
@@ -115,7 +115,7 @@ class NodesTest {
         mockMvc.perform(postRequest(requestOf(item))).andExpect(status().isOk());
 
         mockMvc
-                .perform(get("/nodes"))
+                .perform(get("/nodes/"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(""))
                 .andExpect(jsonPath("$.url").value(""))
