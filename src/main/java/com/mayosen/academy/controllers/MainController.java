@@ -59,7 +59,7 @@ public class MainController {
         return ResponseEntity.ok(itemService.getNodeHistory(id, dateStart, dateEnd));
     }
 
-    @GetMapping("/node//history")
+    @GetMapping({"/node//history", "/node/history"})
     public ResponseEntity<ItemHistoryResponse> getNodeWithBlankIdHistory(
             @RequestParam(required = false) Instant dateStart,
             @RequestParam(required = false) Instant dateEnd
