@@ -252,7 +252,7 @@ class NodesTest {
 
     @Test
     @Sql({"/sql/truncate.sql", "/sql/importGroup.sql"})
-    void filesHasNullChildren() throws Exception {
+    void filesHaveNullChildren() throws Exception {
         mockMvc.perform(get("/nodes/f1")).andExpect(jsonPath("$.children").doesNotExist());
         mockMvc.perform(get("/nodes/f2")).andExpect(jsonPath("$.children").doesNotExist());
         mockMvc.perform(get("/nodes/f3")).andExpect(jsonPath("$.children").doesNotExist());
