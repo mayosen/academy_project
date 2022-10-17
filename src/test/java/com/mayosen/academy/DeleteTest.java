@@ -70,17 +70,27 @@ class DeleteTest {
         String date = "2022-11-11T12:00:00.000Z";
         mockMvc.perform(deleteRequest("f3", date)).andExpect(status().isOk());
 
+        String expectedDate = "2022-11-11T12:00:00Z";
         mockMvc.perform(get("/nodes/c2"))
                 .andExpect(jsonPath("$.size").value(0))
-                .andExpect(jsonPath("$.date").value(date));
+                .andExpect(jsonPath("$.date").value(expectedDate));
         mockMvc.perform(get("/nodes/b1"))
                 .andExpect(jsonPath("$.size").value(110))
-                .andExpect(jsonPath("$.date").value(date));
+                .andExpect(jsonPath("$.date").value(expectedDate));
         mockMvc.perform(get("/nodes/a"))
                 .andExpect(jsonPath("$.size").value(310))
-                .andExpect(jsonPath("$.date").value(date));
+                .andExpect(jsonPath("$.date").value(expectedDate));
 
         mockMvc.perform(get("/nodes/f1"))
-                .andExpect(jsonPath("$.date").value("2022-09-11T12:00:00.000Z"));
+                .andExpect(jsonPath("$.date").value("2022-09-11T12:00:00Z"));
+    }
+
+    @Test
+    @Sql("/truncate.sql")
+    void deleteItemWithBlankId() throws Exception {
+        ItemImport item = new ItemImport("", null, null, ItemType.FOLDER, null);
+        mockMvc.perform(postRequest(requestOf(item))).andExpect(status().isOk());
+        mockMvc.perform(deleteRequest("")).andExpect(status().isOk());
+        mockMvc.perform(get("/nodes/")).andExpect(status().isNotFound());
     }
 }
