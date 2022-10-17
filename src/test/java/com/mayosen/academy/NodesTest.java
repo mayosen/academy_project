@@ -52,26 +52,27 @@ class NodesTest {
                 new ItemImport("child", null, "parent", ItemType.FOLDER, null)
         );
 
+        String createDate = "2022-10-10T00:00:00Z";
         mockMvc
-                .perform(postRequest(requestOf(items, Instant.parse("2022-10-10T00:00:00Z"))))
+                .perform(postRequest(requestOf(items, Instant.parse(createDate))))
                 .andExpect(status().isOk());
-        // Заодно проверка того, что дата возвращается всегда с точностью до миллисекунд
         mockMvc
                 .perform(get("/nodes/parent"))
-                .andExpect(jsonPath("$.date").value("2022-10-10T00:00:00.000Z"));
+                .andExpect(jsonPath("$.date").value(createDate));
         mockMvc
                 .perform(get("/nodes/child"))
-                .andExpect(jsonPath("$.date").value("2022-10-10T00:00:00.000Z"));
+                .andExpect(jsonPath("$.date").value(createDate));
 
+        String updateDate = "2022-10-15T00:00:00Z";
         mockMvc
-                .perform(postRequest(requestOf(items, Instant.parse("2022-10-15T00:00:00Z"))))
+                .perform(postRequest(requestOf(items, Instant.parse(updateDate))))
                 .andExpect(status().isOk());
         mockMvc
                 .perform(get("/nodes/parent"))
-                .andExpect(jsonPath("$.date").value("2022-10-15T00:00:00.000Z"));
+                .andExpect(jsonPath("$.date").value(updateDate));
         mockMvc
                 .perform(get("/nodes/child"))
-                .andExpect(jsonPath("$.date").value("2022-10-15T00:00:00.000Z"));
+                .andExpect(jsonPath("$.date").value(updateDate));
     }
 
     @Test
@@ -81,18 +82,20 @@ class NodesTest {
         ItemImport child = new ItemImport("child", null, "parent", ItemType.FOLDER, null);
 
         mockMvc
-                .perform(postRequest(requestOf(List.of(parent, child), Instant.parse("2022-10-10T00:00:00.000Z"))))
-                .andExpect(status().isOk());
-        mockMvc
-                .perform(postRequest(requestOf(child, Instant.parse("2022-10-15T00:00:00.000Z"))))
+                .perform(postRequest(requestOf(List.of(parent, child), Instant.parse("2022-10-10T00:00:00Z"))))
                 .andExpect(status().isOk());
 
         mockMvc
-                .perform(get("/nodes/parent"))
-                .andExpect(jsonPath("$.date").value("2022-10-15T00:00:00.000Z"));
+                .perform(postRequest(requestOf(child, Instant.parse("2022-10-15T00:00:00.2Z"))))
+                .andExpect(status().isOk());
+
+        String expectedDate = "2022-10-15T00:00:00.200Z";
         mockMvc
                 .perform(get("/nodes/parent"))
-                .andExpect(jsonPath("$.date").value("2022-10-15T00:00:00.000Z"));
+                .andExpect(jsonPath("$.date").value(expectedDate));
+        mockMvc
+                .perform(get("/nodes/parent"))
+                .andExpect(jsonPath("$.date").value(expectedDate));
     }
 
     @Test
@@ -150,18 +153,19 @@ class NodesTest {
         String updateDate = "2022-10-10T12:00:00.000Z";
         mockMvc.perform(postRequest(requestOf(item, Instant.parse(updateDate)))).andExpect(status().isOk());
 
+        String expectedDate = "2022-10-10T12:00:00Z";
         mockMvc
                 .perform(get("/nodes/c2"))
                 .andExpect(jsonPath("$.size").value(0))
-                .andExpect(jsonPath("$.date").value(updateDate));
+                .andExpect(jsonPath("$.date").value(expectedDate));
         mockMvc
                 .perform(get("/nodes/b1"))
                 .andExpect(jsonPath("$.size").value(110))
-                .andExpect(jsonPath("$.date").value(updateDate));
+                .andExpect(jsonPath("$.date").value(expectedDate));
         mockMvc
                 .perform(get("/nodes/a"))
                 .andExpect(jsonPath("$.size").value(310))
-                .andExpect(jsonPath("$.date").value(updateDate));
+                .andExpect(jsonPath("$.date").value(expectedDate));
     }
 
     @Test
@@ -171,22 +175,23 @@ class NodesTest {
         String updateDate = "2022-10-10T12:00:00.000Z";
         mockMvc.perform(postRequest(requestOf(item, Instant.parse(updateDate)))).andExpect(status().isOk());
 
+        String expectedDate = "2022-10-10T12:00:00Z";
         mockMvc
                 .perform(get("/nodes/c2"))
                 .andExpect(jsonPath("$.size").value(0))
-                .andExpect(jsonPath("$.date").value(updateDate));
+                .andExpect(jsonPath("$.date").value(expectedDate));
         mockMvc
                 .perform(get("/nodes/b1"))
                 .andExpect(jsonPath("$.size").value(110))
-                .andExpect(jsonPath("$.date").value(updateDate));
+                .andExpect(jsonPath("$.date").value(expectedDate));
         mockMvc
                 .perform(get("/nodes/b3"))
                 .andExpect(jsonPath("$.size").value(300))
-                .andExpect(jsonPath("$.date").value(updateDate));
+                .andExpect(jsonPath("$.date").value(expectedDate));
         mockMvc
                 .perform(get("/nodes/a"))
                 .andExpect(jsonPath("$.size").value(410))
-                .andExpect(jsonPath("$.date").value(updateDate));
+                .andExpect(jsonPath("$.date").value(expectedDate));
     }
 
     @Test
@@ -196,29 +201,24 @@ class NodesTest {
         String updateDate = "2022-10-10T12:00:00.000Z";
         mockMvc.perform(postRequest(requestOf(item, Instant.parse(updateDate)))).andExpect(status().isOk());
 
+        String expectedDate = "2022-10-10T12:00:00Z";
         mockMvc
                 .perform(get("/nodes/b1"))
                 .andExpect(jsonPath("$.size").value(210))
-                .andExpect(jsonPath("$.date").value(updateDate));
+                .andExpect(jsonPath("$.date").value(expectedDate));
         mockMvc
                 .perform(get("/nodes/b3"))
                 .andExpect(jsonPath("$.size").value(410))
-                .andExpect(jsonPath("$.date").value(updateDate));
+                .andExpect(jsonPath("$.date").value(expectedDate));
         mockMvc
                 .perform(get("/nodes/a"))
                 .andExpect(jsonPath("$.size").value(410))
-                .andExpect(jsonPath("$.date").value(updateDate));
+                .andExpect(jsonPath("$.date").value(expectedDate));
     }
 
     @Test
     @Sql({"/truncate.sql", "/fillWithGroup.sql"})
     void childrenTest() throws Exception {
-        mockMvc.perform(get("/nodes/f1")).andExpect(jsonPath("$.children").doesNotExist());
-        mockMvc.perform(get("/nodes/f2")).andExpect(jsonPath("$.children").doesNotExist());
-        mockMvc.perform(get("/nodes/f3")).andExpect(jsonPath("$.children").doesNotExist());
-        mockMvc.perform(get("/nodes/f4")).andExpect(jsonPath("$.children").doesNotExist());
-        mockMvc.perform(get("/nodes/f6")).andExpect(jsonPath("$.children").doesNotExist());
-
         mockMvc
                 .perform(get("/nodes/c1"))
                 .andExpect(jsonPath("$.children").isArray())
@@ -248,5 +248,15 @@ class NodesTest {
                 .andExpect(jsonPath("$.children").isArray())
                 .andExpect(jsonPath("$.children", hasSize(3)))
                 .andExpect(jsonPath("$.children[*].id", containsInAnyOrder("b1", "b2", "b3")));
+    }
+
+    @Test
+    @Sql({"/truncate.sql", "/fillWithGroup.sql"})
+    void filesHasNullChildren() throws Exception {
+        mockMvc.perform(get("/nodes/f1")).andExpect(jsonPath("$.children").doesNotExist());
+        mockMvc.perform(get("/nodes/f2")).andExpect(jsonPath("$.children").doesNotExist());
+        mockMvc.perform(get("/nodes/f3")).andExpect(jsonPath("$.children").doesNotExist());
+        mockMvc.perform(get("/nodes/f4")).andExpect(jsonPath("$.children").doesNotExist());
+        mockMvc.perform(get("/nodes/f6")).andExpect(jsonPath("$.children").doesNotExist());
     }
 }
