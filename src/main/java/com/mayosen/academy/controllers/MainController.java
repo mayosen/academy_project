@@ -4,7 +4,6 @@ import com.mayosen.academy.requests.ItemImportRequest;
 import com.mayosen.academy.responses.items.ItemResponse;
 import com.mayosen.academy.responses.updates.ItemHistoryResponse;
 import com.mayosen.academy.services.ItemService;
-import com.mayosen.academy.utils.PathUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,16 +25,24 @@ public class MainController {
         itemService.updateItems(request);
     }
 
-    @DeleteMapping({"/delete/{id}", "/delete"})
-    public void deleteItem(@PathVariable(required = false) String id, @RequestParam Instant date) {
-        id = PathUtil.processNullId(id);
+    @DeleteMapping("/delete/{id}")
+    public void deleteItem(@PathVariable String id, @RequestParam Instant date) {
         itemService.deleteItem(id, date);
     }
 
-    @GetMapping({"/nodes/{id}", "/nodes"})
-    public ResponseEntity<ItemResponse> getNode(@PathVariable(required = false) String id) {
-        id = PathUtil.processNullId(id);
+    @DeleteMapping("/delete/")
+    public void deleteItemWithBlankId(@RequestParam Instant date) {
+        itemService.deleteItem("", date);
+    }
+
+    @GetMapping("/nodes/{id}")
+    public ResponseEntity<ItemResponse> getNode(@PathVariable String id) {
         return ResponseEntity.ok(itemService.getNode(id));
+    }
+
+    @GetMapping("/nodes/")
+    public ResponseEntity<ItemResponse> getNodeWithBlankId() {
+        return ResponseEntity.ok(itemService.getNode(""));
     }
 
     @GetMapping("/updates")
@@ -43,13 +50,20 @@ public class MainController {
         return ResponseEntity.ok(itemService.getLastUpdatedFiles(date));
     }
 
-    @GetMapping({"/node/{id}/history", "/node//history"})
+    @GetMapping("/node/{id}/history")
     public ResponseEntity<ItemHistoryResponse> getNodeHistory(
-            @PathVariable(required = false) String id,
+            @PathVariable String id,
             @RequestParam(required = false) Instant dateStart,
             @RequestParam(required = false) Instant dateEnd
     ) {
-        id = PathUtil.processNullId(id);
         return ResponseEntity.ok(itemService.getNodeHistory(id, dateStart, dateEnd));
+    }
+
+    @GetMapping({"/node//history", "/node/history"})
+    public ResponseEntity<ItemHistoryResponse> getNodeWithBlankIdHistory(
+            @RequestParam(required = false) Instant dateStart,
+            @RequestParam(required = false) Instant dateEnd
+    ) {
+        return ResponseEntity.ok(itemService.getNodeHistory("", dateStart, dateEnd));
     }
 }

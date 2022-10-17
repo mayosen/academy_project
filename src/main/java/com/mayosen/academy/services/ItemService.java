@@ -69,7 +69,10 @@ public class ItemService {
             item.setDate(updateDate);
             item.setNewParentId(importItem.getParentId());
             item.setType(importItem.getType());
-            item.setSize(importItem.getSize());
+
+            if (importItem.getType() == ItemType.FILE) {
+                item.setSize(importItem.getSize());
+            }
 
             mappedItems.put(item.getId(), item);
         }

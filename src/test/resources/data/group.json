@@ -1,0 +1,82 @@
+{
+  "items": [
+    {
+      "id": "f3",
+      "url": "f3-url",
+      "parentId": "c2",
+      "size": 100,
+      "type": "FILE"
+    },
+    {
+      "id": "b1",
+      "url": null,
+      "parentId": "a",
+      "size": null,
+      "type": "FOLDER"
+    },
+    {
+      "id": "b2",
+      "url": null,
+      "parentId": "a",
+      "size": null,
+      "type": "FOLDER"
+    },
+    {
+      "id": "b3",
+      "url": null,
+      "parentId": "a",
+      "size": null,
+      "type": "FOLDER"
+    },
+    {
+      "id": "f4",
+      "url": "f4-url",
+      "parentId": null,
+      "size": 40,
+      "type": "FILE"
+    },
+    {
+      "id": "c1",
+      "url": null,
+      "parentId": "b3",
+      "size": null,
+      "type": "FOLDER"
+    },
+    {
+      "id": "a",
+      "url": null,
+      "parentId": null,
+      "size": null,
+      "type": "FOLDER"
+    },
+    {
+      "id": "f1",
+      "url": "f1-url",
+      "parentId": "b1",
+      "size": 50,
+      "type": "FILE"
+    },
+    {
+      "id": "f2",
+      "url": "f2-url",
+      "parentId": "b1",
+      "size": 60,
+      "type": "FILE"
+    },
+    {
+      "id": "c2",
+      "url": null,
+      "parentId": "b1",
+      "size": null,
+      "type": "FOLDER"
+    },
+    {
+      "id": "f6",
+      "url": "f6-url",
+      "parentId": "c1",
+      "size": 200,
+      "type": "FILE"
+    }
+  ],
+  "updateDate": "2022-09-11T12:00:00.000Z"
+}
