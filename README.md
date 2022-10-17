@@ -11,8 +11,14 @@
 [Cпецификация OpenAPI](/src/main/resources/openapi.yaml), которую нужно реализовать.  
 Открыть можно в онлайн-редакторе [Swagger Editor](https://editor.swagger.io/).
 
-# Запуск
+# Технологии
+- Java 17
+- Gradle 7.5
+- Spring Boot 2.7
+- PostgreSQL 14.2
+- Docker 20.10
 
+# Запуск
 ## Локально
 1. Установить переменные окружения.
 ```bash
