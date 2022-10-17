@@ -45,7 +45,7 @@ class NodesTest {
     }
 
     @Test
-    @Sql("/truncate.sql")
+    @Sql("/sql/truncate.sql")
     void updateDateWithoutContentChanges() throws Exception {
         List<ItemImport> items = List.of(
                 new ItemImport("parent", null, null, ItemType.FOLDER, null),
@@ -76,7 +76,7 @@ class NodesTest {
     }
 
     @Test
-    @Sql("/truncate.sql")
+    @Sql("/sql/truncate.sql")
     void updateParentDate() throws Exception {
         ItemImport parent = new ItemImport("parent", null, null, ItemType.FOLDER, null);
         ItemImport child = new ItemImport("child", null, "parent", ItemType.FOLDER, null);
@@ -99,7 +99,7 @@ class NodesTest {
     }
 
     @Test
-    @Sql("/truncate.sql")
+    @Sql("/sql/truncate.sql")
     void notFound() throws Exception {
         mockMvc
                 .perform(get("/nodes/"))
@@ -109,7 +109,7 @@ class NodesTest {
     }
 
     @Test
-    @Sql("/truncate.sql")
+    @Sql("/sql/truncate.sql")
     void getItemWithBlankId() throws Exception {
         ItemImport item = new ItemImport("", "", null, ItemType.FILE, 100L);
         mockMvc.perform(postRequest(requestOf(item))).andExpect(status().isOk());
@@ -126,7 +126,7 @@ class NodesTest {
     }
 
     @Test
-    @Sql("/truncate.sql")
+    @Sql("/sql/truncate.sql")
     void sizes() throws Exception {
         mockMvc.perform(postFileRequest("/group.json")).andExpect(status().isOk());
 
@@ -147,7 +147,7 @@ class NodesTest {
     }
 
     @Test
-    @Sql({"/truncate.sql", "/fillWithGroup.sql"})
+    @Sql({"/sql/truncate.sql", "/sql/importGroup.sql"})
     void moveFileToRoot() throws Exception {
         ItemImport item = new ItemImport("f3", "f3-url", null, ItemType.FILE, 100L);
         String updateDate = "2022-10-10T12:00:00.000Z";
@@ -169,7 +169,7 @@ class NodesTest {
     }
 
     @Test
-    @Sql({"/truncate.sql", "/fillWithGroup.sql"})
+    @Sql({"/sql/truncate.sql", "/sql/importGroup.sql"})
     void moveFileToOtherFolder() throws Exception {
         ItemImport item = new ItemImport("f3", "f3-url", "b3", ItemType.FILE, 100L);
         String updateDate = "2022-10-10T12:00:00.000Z";
@@ -195,7 +195,7 @@ class NodesTest {
     }
 
     @Test
-    @Sql({"/truncate.sql", "/fillWithGroup.sql"})
+    @Sql({"/sql/truncate.sql", "/sql/importGroup.sql"})
     void moveFolderToOtherFolder() throws Exception {
         ItemImport item = new ItemImport("b1", null, "b3", ItemType.FOLDER, null);
         String updateDate = "2022-10-10T12:00:00.000Z";
@@ -217,7 +217,7 @@ class NodesTest {
     }
 
     @Test
-    @Sql({"/truncate.sql", "/fillWithGroup.sql"})
+    @Sql({"/sql/truncate.sql", "/sql/importGroup.sql"})
     void childrenTest() throws Exception {
         mockMvc
                 .perform(get("/nodes/c1"))
@@ -251,7 +251,7 @@ class NodesTest {
     }
 
     @Test
-    @Sql({"/truncate.sql", "/fillWithGroup.sql"})
+    @Sql({"/sql/truncate.sql", "/sql/importGroup.sql"})
     void filesHasNullChildren() throws Exception {
         mockMvc.perform(get("/nodes/f1")).andExpect(jsonPath("$.children").doesNotExist());
         mockMvc.perform(get("/nodes/f2")).andExpect(jsonPath("$.children").doesNotExist());

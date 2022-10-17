@@ -126,7 +126,7 @@ class ImportValidationTest {
     }
 
     @Test
-    @Sql("/truncate.sql")
+    @Sql("/sql/truncate.sql")
     void fileAsParent() throws Exception {
         List<ItemImport> items = List.of(
                 new ItemImport("child", null, "parent", ItemType.FOLDER, null),
@@ -136,7 +136,7 @@ class ImportValidationTest {
     }
 
     @Test
-    @Sql("/truncate.sql")
+    @Sql("/sql/truncate.sql")
     void folderAsParent() throws Exception {
         List<ItemImport> items = List.of(
                 new ItemImport("child", null, "parent", ItemType.FOLDER, null),
@@ -146,14 +146,14 @@ class ImportValidationTest {
     }
 
     @Test
-    @Sql("/truncate.sql")
+    @Sql("/sql/truncate.sql")
     void notExistingParent() throws Exception {
         ItemImport item = new ItemImport("item", "", "notExistingParent", ItemType.FILE, 40L);
         expectValidationFailed(mockMvc.perform(postRequest(requestOf(item))));
     }
 
     @Test
-    @Sql("/truncate.sql")
+    @Sql("/sql/truncate.sql")
     void existingParent() throws Exception {
         ItemImport folder = new ItemImport("folder", null, null, ItemType.FOLDER, null);
         mockMvc.perform(postRequest(requestOf(folder))).andExpect(status().isOk());

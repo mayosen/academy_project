@@ -31,7 +31,7 @@ class HistoryTest {
     }
 
     @Test
-    @Sql("/truncate.sql")
+    @Sql("/sql/truncate.sql")
     void itemWithBlankId() throws Exception {
         String date = "2022-11-11T12:00:00.020Z";
         ItemImport item = new ItemImport("", null, null, ItemType.FOLDER, null);
@@ -45,7 +45,7 @@ class HistoryTest {
     }
 
     @Test
-    @Sql("/truncate.sql")
+    @Sql("/sql/truncate.sql")
     void AreUpdatesSaved() throws Exception {
         ItemImport parent = new ItemImport("parent", null, null, ItemType.FOLDER, null);
         ItemImport file = new ItemImport("file", "url", "parent", ItemType.FILE, 77L);
@@ -77,7 +77,7 @@ class HistoryTest {
     }
 
     @Test
-    @Sql({"/truncate.sql", "/sql/fillUpdates.sql"})
+    @Sql({"/sql/truncate.sql", "/sql/fillUpdates.sql"})
     void allHistory() throws Exception {
         mockMvc
                 .perform(get("/node/file/history"))
@@ -87,7 +87,7 @@ class HistoryTest {
     }
 
     @Test
-    @Sql({"/truncate.sql", "/sql/fillUpdates.sql"})
+    @Sql({"/sql/truncate.sql", "/sql/fillUpdates.sql"})
     void dateEndExclusive() throws Exception {
         mockMvc
                 .perform(get("/node/file/history?dateEnd=" + "2022-10-10T16:00:00Z"))
@@ -97,7 +97,7 @@ class HistoryTest {
     }
 
     @Test
-    @Sql({"/truncate.sql", "/sql/fillUpdates.sql"})
+    @Sql({"/sql/truncate.sql", "/sql/fillUpdates.sql"})
     void dateEndInclusive() throws Exception {
         mockMvc
                 .perform(get("/node/file/history?dateEnd=" + "2022-10-10T16:00:00.001Z"))
@@ -107,7 +107,7 @@ class HistoryTest {
     }
 
     @Test
-    @Sql({"/truncate.sql", "/sql/fillUpdates.sql"})
+    @Sql({"/sql/truncate.sql", "/sql/fillUpdates.sql"})
     void dateStart() throws Exception {
         mockMvc
                 .perform(get("/node/file/history?dateStart=" + "2022-10-10T17:00:00Z"))
@@ -117,7 +117,7 @@ class HistoryTest {
     }
 
     @Test
-    @Sql({"/truncate.sql", "/sql/fillUpdates.sql"})
+    @Sql({"/sql/truncate.sql", "/sql/fillUpdates.sql"})
     void dateStartAndDateEndExclusive() throws Exception {
         mockMvc
                 .perform(get("/node/file/history?dateStart=" + "2022-10-10T14:00:00Z"
@@ -128,7 +128,7 @@ class HistoryTest {
     }
 
     @Test
-    @Sql({"/truncate.sql", "/sql/fillUpdates.sql"})
+    @Sql({"/sql/truncate.sql", "/sql/fillUpdates.sql"})
     void dateStartAndDateEndInclusive() throws Exception {
         mockMvc
                 .perform(get("/node/file/history?dateStart=" + "2022-10-10T14:00:00Z"

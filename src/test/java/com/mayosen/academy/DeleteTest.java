@@ -65,7 +65,7 @@ class DeleteTest {
     }
 
     @Test
-    @Sql({"/truncate.sql", "/fillWithGroup.sql"})
+    @Sql({"/sql/truncate.sql", "/sql/importGroup.sql"})
     void updateParents() throws Exception {
         String date = "2022-11-11T12:00:00.000Z";
         mockMvc.perform(deleteRequest("f3", date)).andExpect(status().isOk());
@@ -86,7 +86,7 @@ class DeleteTest {
     }
 
     @Test
-    @Sql("/truncate.sql")
+    @Sql("/sql/truncate.sql")
     void deleteItemWithBlankId() throws Exception {
         ItemImport item = new ItemImport("", null, null, ItemType.FOLDER, null);
         mockMvc.perform(postRequest(requestOf(item))).andExpect(status().isOk());

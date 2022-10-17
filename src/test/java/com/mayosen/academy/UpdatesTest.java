@@ -49,7 +49,7 @@ class UpdatesTest {
     }
 
     @Test
-    @Sql("/truncate.sql")
+    @Sql("/sql/truncate.sql")
     void doNotGetFolders() throws Exception {
         List<ItemImport> items = List.of(
                 new ItemImport("first", null, null, ItemType.FOLDER, null),
@@ -64,7 +64,7 @@ class UpdatesTest {
     }
 
     @Test
-    @Sql("/truncate.sql")
+    @Sql("/sql/truncate.sql")
     void getOnlyFiles() throws Exception {
         List<ItemImport> items = List.of(
                 new ItemImport("first", null, null, ItemType.FOLDER, null),
@@ -81,7 +81,7 @@ class UpdatesTest {
     }
 
     @Test
-    @Sql("/truncate.sql")
+    @Sql("/sql/truncate.sql")
     void filterFilesByDateInterval() throws Exception {
         ItemImport oldItem = new ItemImport("file", "url", null, ItemType.FILE, 100L);
         mockMvc
